@@ -35,6 +35,7 @@ public class DraggableFloatingButton extends View {
     private float dY;
     private boolean isDragging = false;
     private boolean isLongPressed = false;
+    private boolean isFingerOutside = false;
     private float rippleRadius = 0f;
     private int screenHeight;
 
@@ -66,10 +67,10 @@ public class DraggableFloatingButton extends View {
         super.onSizeChanged(w, h, oldw, oldh);
         screenHeight = h;
 
-        // Initial position: right edge, slightly above bottom navigation bar
+        // Initial position: right-bottom corner, above bottom navigation
         if (getTranslationY() == 0) {
-            // Position it higher than the bottom nav (assuming bottom nav is ~56dp)
-            float initialY = screenHeight - dpToPx(BUTTON_SIZE + 80);
+            // Position at bottom-right, accounting for bottom nav (~56dp) + margin
+            float initialY = screenHeight - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE + 56);
             setTranslationY(initialY);
         }
     }
@@ -126,6 +127,7 @@ public class DraggableFloatingButton extends View {
                 dY = getTranslationY() - event.getRawY();
                 isDragging = false;
                 isLongPressed = false;
+                isFingerOutside = false;
 
                 scheduleLongPress();
                 playPressAnimation();
@@ -133,6 +135,13 @@ public class DraggableFloatingButton extends View {
 
             case MotionEvent.ACTION_MOVE:
                 float deltaY = Math.abs(event.getRawY() - startY);
+
+                // Check if finger moved outside button bounds
+                if (isLongPressed) {
+                    if (!isPointInsideView(event.getRawX(), event.getRawY())) {
+                        isFingerOutside = true;
+                    }
+                }
 
                 if (deltaY > dpToPx(DRAG_THRESHOLD)) {
                     isDragging = true;
@@ -152,15 +161,21 @@ public class DraggableFloatingButton extends View {
             case MotionEvent.ACTION_UP:
                 cancelLongPressTimer();
 
-                if (!isDragging && !isLongPressed) {
-                    // Normal click
+                // Cancel logic: long press + finger moved outside + release = cancel
+                if (isLongPressed && isFingerOutside) {
+                    // Cancelled - do nothing, just play release animation
+                    playReleaseAnimation();
+                } else if (!isDragging) {
+                    // Normal click (no drag, finger stayed inside)
                     handleClick();
                 } else {
+                    // Just dragged, release animation
                     playReleaseAnimation();
                 }
 
                 isDragging = false;
                 isLongPressed = false;
+                isFingerOutside = false;
                 return true;
 
             case MotionEvent.ACTION_CANCEL:
@@ -168,9 +183,20 @@ public class DraggableFloatingButton extends View {
                 playReleaseAnimation();
                 isDragging = false;
                 isLongPressed = false;
+                isFingerOutside = false;
                 return true;
         }
         return super.onTouchEvent(event);
+    }
+
+    private boolean isPointInsideView(float x, float y) {
+        int[] location = new int[2];
+        getLocationOnScreen(location);
+        int viewX = location[0];
+        int viewY = location[1];
+
+        return (x >= viewX && x <= viewX + getWidth() &&
+                y >= viewY && y <= viewY + getHeight());
     }
 
     private void handleClick() {
