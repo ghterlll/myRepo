@@ -113,11 +113,6 @@ public class FeedFragment extends Fragment {
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                // Trigger floating button collapse on scroll
-                if (fabCreate != null && Math.abs(dy) > 0) {
-                    fabCreate.collapse();
-                }
-
                 if (isLoading || !vm.hasMorePages()) return;
 
                 StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
@@ -178,18 +173,6 @@ public class FeedFragment extends Fragment {
                     .replace(R.id.fragment_container, new CreateFragment())
                     .addToBackStack(null)
                     .commit();
-            });
-
-            fabCreate.setOnStateChangeListener(new DraggableFloatingButton.OnStateChangeListener() {
-                @Override
-                public void onExpanded() {
-                    // Optional: handle expanded state
-                }
-
-                @Override
-                public void onCollapsed() {
-                    // Optional: handle collapsed state
-                }
             });
         }
     }
