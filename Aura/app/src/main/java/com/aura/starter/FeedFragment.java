@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.aura.starter.model.Post;
+import com.aura.starter.widget.DraggableFloatingButton;
 import com.google.android.material.textfield.TextInputEditText;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +26,7 @@ public class FeedFragment extends Fragment {
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView recycler;
     private PostAdapter adapter;
+    private DraggableFloatingButton fabCreate;
     private boolean isLoading = false;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -49,12 +51,16 @@ public class FeedFragment extends Fragment {
         // Setup scroll listener for load more
         setupScrollListener();
 
+        // Setup floating action button
+        setupFloatingButton(v);
+
         return v;
     }
 
     private void setupViews(View view) {
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         recycler = view.findViewById(R.id.recycler);
+        fabCreate = view.findViewById(R.id.fabCreate);
     }
 
     private void setupRecyclerView() {
@@ -107,6 +113,11 @@ public class FeedFragment extends Fragment {
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
+                // Trigger floating button collapse on scroll
+                if (fabCreate != null && Math.abs(dy) > 0) {
+                    fabCreate.collapse();
+                }
+
                 if (isLoading || !vm.hasMorePages()) return;
 
                 StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
@@ -153,6 +164,34 @@ public class FeedFragment extends Fragment {
                 isLoading = false;
             });
         });
+    }
+
+    /**
+     * Setup floating action button for creating posts
+     */
+    private void setupFloatingButton(View view) {
+        if (fabCreate != null) {
+            fabCreate.setOnClickListener(v -> {
+                // Navigate to CreateFragment
+                getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new CreateFragment())
+                    .addToBackStack(null)
+                    .commit();
+            });
+
+            fabCreate.setOnStateChangeListener(new DraggableFloatingButton.OnStateChangeListener() {
+                @Override
+                public void onExpanded() {
+                    // Optional: handle expanded state
+                }
+
+                @Override
+                public void onCollapsed() {
+                    // Optional: handle collapsed state
+                }
+            });
+        }
     }
 
     /**
