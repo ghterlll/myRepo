@@ -24,7 +24,6 @@ import com.aura.starter.R;
 
 public class DraggableFloatingButton extends View {
 
-    private static final int LONG_PRESS_TIMEOUT = ViewConfiguration.getLongPressTimeout();
     private static final float BUTTON_SIZE = 56f; // dp
     private static final float DRAG_THRESHOLD = 10f; // dp
     private static final float MARGIN_FROM_EDGE = 16f; // dp
@@ -34,12 +33,8 @@ public class DraggableFloatingButton extends View {
     private float startY;
     private float dY;
     private boolean isDragging = false;
-    private boolean isLongPressed = false;
-    private boolean isFingerOutside = false;
     private float rippleRadius = 0f;
     private int screenHeight;
-
-    private Handler longPressHandler = new Handler(Looper.getMainLooper());
 
     private OnClickListener clickListener;
 
@@ -126,26 +121,14 @@ public class DraggableFloatingButton extends View {
                 startY = event.getRawY();
                 dY = getTranslationY() - event.getRawY();
                 isDragging = false;
-                isLongPressed = false;
-                isFingerOutside = false;
-
-                scheduleLongPress();
                 playPressAnimation();
                 return true;
 
             case MotionEvent.ACTION_MOVE:
                 float deltaY = Math.abs(event.getRawY() - startY);
 
-                // Check if finger moved outside button bounds
-                if (isLongPressed) {
-                    if (!isPointInsideView(event.getRawX(), event.getRawY())) {
-                        isFingerOutside = true;
-                    }
-                }
-
                 if (deltaY > dpToPx(DRAG_THRESHOLD)) {
                     isDragging = true;
-                    cancelLongPressTimer();
 
                     // Only allow vertical movement
                     float newY = event.getRawY() + dY;
@@ -159,44 +142,23 @@ public class DraggableFloatingButton extends View {
                 return true;
 
             case MotionEvent.ACTION_UP:
-                cancelLongPressTimer();
-
-                // Cancel logic: long press + finger moved outside + release = cancel
-                if (isLongPressed && isFingerOutside) {
-                    // Cancelled - do nothing, just play release animation
-                    playReleaseAnimation();
-                } else if (!isDragging) {
-                    // Normal click (no drag, finger stayed inside)
+                if (!isDragging) {
+                    // Normal click (no drag)
                     handleClick();
                 } else {
-                    // Just dragged, release animation
+                    // Just dragged, release animation only
                     playReleaseAnimation();
                 }
 
                 isDragging = false;
-                isLongPressed = false;
-                isFingerOutside = false;
                 return true;
 
             case MotionEvent.ACTION_CANCEL:
-                cancelLongPressTimer();
                 playReleaseAnimation();
                 isDragging = false;
-                isLongPressed = false;
-                isFingerOutside = false;
                 return true;
         }
         return super.onTouchEvent(event);
-    }
-
-    private boolean isPointInsideView(float x, float y) {
-        int[] location = new int[2];
-        getLocationOnScreen(location);
-        int viewX = location[0];
-        int viewY = location[1];
-
-        return (x >= viewX && x <= viewX + getWidth() &&
-                y >= viewY && y <= viewY + getHeight());
     }
 
     private void handleClick() {
@@ -252,19 +214,6 @@ public class DraggableFloatingButton extends View {
         finalSet.start();
     }
 
-    private void scheduleLongPress() {
-        longPressHandler.postDelayed(() -> {
-            if (!isDragging) {
-                isLongPressed = true;
-                performHapticFeedback(HAPTIC_FEEDBACK_ENABLED);
-            }
-        }, LONG_PRESS_TIMEOUT);
-    }
-
-    private void cancelLongPressTimer() {
-        longPressHandler.removeCallbacksAndMessages(null);
-    }
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int size = (int) dpToPx(BUTTON_SIZE);
@@ -278,11 +227,5 @@ public class DraggableFloatingButton extends View {
 
     private float dpToPx(float dp) {
         return dp * getResources().getDisplayMetrics().density;
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        cancelLongPressTimer();
     }
 }
