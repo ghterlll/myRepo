@@ -165,7 +165,7 @@ public class DraggableFloatingButton extends View {
 
                 if (deltaX > dpToPx(DRAG_THRESHOLD) || deltaY > dpToPx(DRAG_THRESHOLD)) {
                     isDragging = true;
-                    cancelLongPress();
+                    cancelLongPressTimer();
 
                     if (isExpanded) {
                         setTranslationX(event.getRawX() + dX);
@@ -175,7 +175,7 @@ public class DraggableFloatingButton extends View {
                 return true;
 
             case MotionEvent.ACTION_UP:
-                cancelLongPress();
+                cancelLongPressTimer();
 
                 if (isDragging) {
                     snapToEdge();
@@ -194,7 +194,7 @@ public class DraggableFloatingButton extends View {
                 return true;
 
             case MotionEvent.ACTION_CANCEL:
-                cancelLongPress();
+                cancelLongPressTimer();
                 playReleaseAnimation();
                 scheduleAutoHide();
                 isDragging = false;
@@ -369,7 +369,7 @@ public class DraggableFloatingButton extends View {
         }, LONG_PRESS_TIMEOUT);
     }
 
-    private void cancelLongPress() {
+    private void cancelLongPressTimer() {
         longPressHandler.removeCallbacksAndMessages(null);
     }
 
@@ -402,6 +402,6 @@ public class DraggableFloatingButton extends View {
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         cancelAutoHide();
-        cancelLongPress();
+        cancelLongPressTimer();
     }
 }
