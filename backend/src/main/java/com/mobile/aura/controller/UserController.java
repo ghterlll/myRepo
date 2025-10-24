@@ -61,7 +61,7 @@ public class UserController {
                 .eq(User::getEmail, req.getEmail()));
 
         if (user == null) {
-            return ResponseResult.fail(CommonStatusEnum.USER_NOT_FOUND.getCode(),
+            return ResponseResult.fail(CommonStatusEnum.USER_NOT_EXISTS.getCode(),
                     "User not found with email: " + req.getEmail());
         }
 
