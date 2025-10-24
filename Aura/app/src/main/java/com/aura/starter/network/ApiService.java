@@ -1,0 +1,153 @@
+package com.aura.starter.network;
+
+import com.aura.starter.network.models.*;
+
+import java.util.List;
+import okhttp3.MultipartBody;
+import retrofit2.Call;
+import retrofit2.http.*;
+
+public interface ApiService {
+    
+    // ==================== login ====================
+    
+    @POST("api/v1/user/register")
+    Call<ApiResponse<Void>> registerWithOtp(@Body RegisterWithOtpRequest request);
+
+    @POST("api/v1/user/register/code")
+    Call<ApiResponse<Void>> sendRegistrationCode(@Body SendRegistrationCodeRequest request);
+
+    @POST("api/v1/user/register/verify")
+    Call<ApiResponse<TokenResponse>> verifyRegistration(@Body VerifyRegistrationRequest request);
+    
+    @POST("api/v1/user/auth/login")
+    Call<ApiResponse<TokenResponse>> login(@Body LoginRequest request);
+    
+    @POST("api/v1/user/auth/refresh")
+    Call<ApiResponse<TokenResponse>> refreshToken(@Body RefreshTokenRequest request);
+    
+    // ==================== user info ====================
+    
+    @GET("api/v1/user/me")
+    Call<ApiResponse<UserProfileResponse>> getMyProfile();
+    
+    @PATCH("api/v1/user/me/profile")
+    Call<ApiResponse<Void>> updateMyProfile(@Body UserProfileUpdateRequest request);
+    
+    // ==================== intake record ====================
+    
+    // Meal module (per backend: /api/v1/meal/...)
+    @POST("api/v1/meal/from-source")
+    Call<ApiResponse<MealLogIdResponse>> addMealFromSource(@Body MealAddRequest request);
+
+    @POST("api/v1/meal/free-input")
+    Call<ApiResponse<MealLogIdResponse>> addMealFreeInput(@Body MealAddRequest request);
+    
+    @GET("api/v1/meal/day")
+    Call<ApiResponse<DailySummaryResponse>> getDailySummary(@Query("date") String date);
+    
+    @DELETE("api/v1/meal/{id}")
+    Call<ApiResponse<Void>> deleteMeal(@Path("id") Long id);
+    
+    // ==================== food library ====================
+    
+    @GET("api/v1/food/my")
+    Call<ApiResponse<FoodSearchResponse>> searchFoods(
+            @Query("q") String query,
+            @Query("category") String category,
+            @Query("limit") Integer limit,
+            @Query("offset") Integer offset,
+            @Query("scope") String scope // e.g. "system" | "custom" | "all"
+    );
+    
+    @POST("api/v1/food/my/foods")
+    Call<ApiResponse<UserFoodItemResponse>> createUserFoodItem(@Body UserFoodItemRequest request);
+    
+    @GET("api/v1/food/my")
+    Call<ApiResponse<UserFoodItemListResponse>> getUserFoodItems();
+    
+    // ==================== water record ====================
+    
+    @POST("api/v1/water/increment")
+    Call<ApiResponse<Void>> addWater(@Body WaterAddRequest request);
+    
+    @GET("api/v1/water/day")
+    Call<ApiResponse<WaterDailySummaryResponse>> getWaterDailySummary(@Query("date") String date);
+    
+    // Backend expects body for DELETE /day; keep signature if UI uses query; adjust later if needed
+    @DELETE("api/v1/water/day")
+    Call<ApiResponse<Void>> deleteWater(@Query("date") String date);
+    
+    @GET("api/v1/water/range")
+    Call<ApiResponse<WaterRangeResponse>> getWaterRange(@Query("from") String from, @Query("to") String to);
+    
+    // ==================== weight records ====================
+    
+    @POST("api/v1/weight")
+    Call<ApiResponse<Void>> logWeight(@Body WeightLogRequest request);
+    
+    @GET("api/v1/weight/range")
+    Call<ApiResponse<WeightHistoryResponse>> getWeightHistory(
+            @Query("start") String start,
+            @Query("end") String end
+    );
+    
+    @GET("api/v1/weight/latest")
+    Call<ApiResponse<WeightLogResponse>> getLatestWeight();
+
+    @PATCH("api/v1/weight/initial")
+    Call<ApiResponse<Void>> updateInitialWeight(@Body UpdateInitialWeightRequest request);
+    
+    // ==================== exercise records ====================
+    
+    @POST("api/v1/exercise/add")
+    Call<ApiResponse<Void>> addExercise(@Body ExerciseAddRequest request);
+    
+    @GET("api/v1/exercise/daily-workout")
+    Call<ApiResponse<DailyWorkoutResponse>> getDailyWorkout(@Query("date") String date);
+    
+    // ==================== daily overview ====================
+    
+    @GET("api/v1/overview/day")
+    Call<ApiResponse<DayOverviewResponse>> getDayOverview(@Query("date") String date);
+    
+    // ==================== file upload ====================
+    
+    @Multipart
+    @POST("api/v1/files/food/image")
+    Call<ApiResponse<FileUploadResponse>> uploadFoodImage(@Part MultipartBody.Part file);
+    
+    @Multipart
+    @POST("api/v1/files/avatar")
+    Call<ApiResponse<FileUploadResponse>> uploadAvatar(@Part MultipartBody.Part file);
+    
+    @Multipart
+    @POST("api/v1/files/post/image")
+    Call<ApiResponse<FileUploadResponse>> uploadPostImage(@Part MultipartBody.Part file);
+    
+    @Multipart
+    @POST("api/v1/files/post/images/batch")
+    Call<ApiResponse<FileUploadBatchResponse>> uploadPostImagesBatch(@Part List<MultipartBody.Part> files);
+    
+    @DELETE("api/v1/files")
+    Call<ApiResponse<Void>> deleteFile(@Query("key") String key);
+    
+    @GET("api/v1/files/presigned-url")
+    Call<ApiResponse<PresignedUrlResponse>> getPresignedUrl(
+            @Query("key") String key,
+            @Query("expirationMinutes") int expirationMinutes
+    );
+    
+    @GET("api/v1/files/exists")
+    Call<ApiResponse<FileExistsResponse>> fileExists(@Query("key") String key);
+
+    // ==================== test interface ====================
+    
+    @GET("api/test/ping")
+    Call<PingResp> ping();
+
+    @GET("api/test/hello")
+    Call<String> hello();
+}
+
+

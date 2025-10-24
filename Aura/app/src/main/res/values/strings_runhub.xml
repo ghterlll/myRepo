@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cta_start_run">Start Run</string>
+    <string name="run_now">Run Now</string>
+    <string name="recent_runs">Recent Runs</string>
+    <string name="top_steps_today">Top Steps Today</string>
+    <string name="see_all">See all</string>
+</resources>

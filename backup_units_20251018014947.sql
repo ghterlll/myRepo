@@ -1,0 +1,95 @@
+-- MySQL dump 10.13  Distrib 9.4.0, for macos14.7 (x86_64)
+--
+-- Host: localhost    Database: app
+-- ------------------------------------------------------
+-- Server version	8.0.30
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `meal_log`
+--
+
+DROP TABLE IF EXISTS `meal_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `meal_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL COMMENT 'User ID',
+  `meal_date` date NOT NULL COMMENT 'Meal date',
+  `meal_type` tinyint NOT NULL COMMENT 'Meal type: 0=breakfast, 1=lunch, 2=dinner, 3=snack',
+  `source_id` bigint DEFAULT NULL COMMENT 'User food item ID (NULL for free input)',
+  `item_name` varchar(128) NOT NULL COMMENT 'Food item name',
+  `unit_name` varchar(32) NOT NULL DEFAULT 'unit' COMMENT 'Unit of measurement (default: unit)',
+  `unit_qty` decimal(8,2) NOT NULL DEFAULT '1.00' COMMENT 'Quantity (default: 1)',
+  `kcal` int NOT NULL COMMENT 'Total calories',
+  `image_url` varchar(512) DEFAULT NULL COMMENT 'Food image URL from OSS',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_date` (`user_id`,`meal_date`),
+  KEY `idx_user_created` (`user_id`,`created_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=1979196983289593858 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Meal logs';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `meal_log`
+--
+
+LOCK TABLES `meal_log` WRITE;
+/*!40000 ALTER TABLE `meal_log` DISABLE KEYS */;
+INSERT INTO `meal_log` VALUES (1979076202442276865,1979068748203573250,'2025-10-17',3,1979076202073178113,'Egg','份',1.00,76,NULL,'2025-10-17 17:45:11','2025-10-17 17:59:26'),(1979076270914289665,1979068748203573250,'2025-10-17',3,1979076202073178113,'Egg','份',1.00,76,NULL,'2025-10-17 17:45:27','2025-10-17 17:59:27'),(1979078270326423553,1979068748203573250,'2025-10-17',2,1979076202073178113,'Egg','份',1.00,76,NULL,'2025-10-17 17:53:24','2025-10-17 17:59:24'),(1979079052601868290,1979068748203573250,'2025-10-17',2,1979076202073178113,'Egg','份',1.00,76,NULL,'2025-10-17 17:56:30','2025-10-17 17:59:25'),(1979083762301943809,1979068748203573250,'2025-10-17',2,1979083761760878593,'Milk','份',1.00,132,NULL,'2025-10-17 18:15:13','2025-10-17 18:22:46'),(1979084091139571713,1979068748203573250,'2025-10-17',3,1979084091001159682,'Chicken Drumstick','份',1.00,153,NULL,'2025-10-17 18:16:32','2025-10-17 18:23:07'),(1979085626292584449,1979068748203573250,'2025-10-17',2,1979084091001159682,'Chicken Drumstick','份',1.00,153,NULL,'2025-10-17 18:22:38','2025-10-17 18:23:05'),(1979086632204124161,1979068748203573250,'2025-10-17',2,1979084091001159682,'Chicken Drumstick','份',1.00,153,NULL,'2025-10-17 18:26:37',NULL),(1979193800974680065,1979068748203573250,'2025-10-18',1,1979083761760878593,'Milk','份',1.00,132,NULL,'2025-10-18 01:32:28','2025-10-18 01:32:31'),(1979194450940805122,1979068748203573250,'2025-10-18',1,1979083761760878593,'Milk','份',1.00,132,NULL,'2025-10-18 01:35:03','2025-10-18 01:35:11'),(1979196124493266945,1979068748203573250,'2025-10-18',1,1979083761760878593,'Milk','份',1.00,132,NULL,'2025-10-18 01:41:42','2025-10-18 01:45:03'),(1979196983289593857,1979068748203573250,'2025-10-18',2,1979083761760878593,'Milk','份',1.00,132,NULL,'2025-10-18 01:45:07',NULL);
+/*!40000 ALTER TABLE `meal_log` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user_food_item`
+--
+
+DROP TABLE IF EXISTS `user_food_item`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_food_item` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL COMMENT 'User ID',
+  `name` varchar(128) NOT NULL COMMENT 'Food name',
+  `unit_name` varchar(32) NOT NULL DEFAULT 'unit' COMMENT 'Unit of measurement (default: unit)',
+  `kcal_per_unit` int NOT NULL COMMENT 'Calories per unit',
+  `image_url` varchar(512) DEFAULT NULL COMMENT 'Food image URL from OSS',
+  `enabled` tinyint NOT NULL DEFAULT '1' COMMENT 'Active status',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_food_name` (`user_id`,`name`),
+  KEY `idx_user_food` (`user_id`,`enabled`)
+) ENGINE=InnoDB AUTO_INCREMENT=1979084091001159683 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User custom food items';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_food_item`
+--
+
+LOCK TABLES `user_food_item` WRITE;
+/*!40000 ALTER TABLE `user_food_item` DISABLE KEYS */;
+INSERT INTO `user_food_item` VALUES (1979076202073178113,1979068748203573250,'Egg','份',76,NULL,1,'2025-10-17 17:45:10'),(1979083761760878593,1979068748203573250,'Milk','份',132,NULL,1,'2025-10-17 18:15:13'),(1979084091001159682,1979068748203573250,'Chicken Drumstick','份',153,NULL,1,'2025-10-17 18:16:31');
+/*!40000 ALTER TABLE `user_food_item` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2025-10-18  1:49:48

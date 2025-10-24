@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="280dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_custom_dialog_rounded"
+    android:elevation="12dp"
+    android:padding="20dp"
+    android:layout_gravity="center_horizontal|center_vertical"
+    android:layout_marginTop="120dp">
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Custom Food"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true" />
+
+        <!-- Close Button -->
+        <ImageView
+            android:id="@+id/btnClose"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="20dp"
+            android:src="@drawable/ic_close"
+            android:scaleType="fitCenter"
+            android:padding="4dp" />
+
+    </RelativeLayout>
+
+    <!-- Input Fields -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Food Name -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Name *"
+                android:textSize="14sp"
+                android:textColor="#333333"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/etFoodName"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:hint="Enter food name"
+                android:textSize="14sp"
+                android:textColor="#333333"
+                android:background="@drawable/bg_input_field"
+                android:padding="10dp"
+                android:inputType="text" />
+
+        </LinearLayout>
+
+        <!-- Weight -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Weight *"
+                    android:textSize="14sp"
+                    android:textColor="#333333"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="g"
+                    android:textSize="14sp"
+                    android:textColor="#666666" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Estimate"
+                    android:textSize="12sp"
+                    android:textColor="#388E3C"
+                    android:layout_marginStart="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="4dp" />
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_info"
+                    android:layout_marginStart="4dp" />
+
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/etWeight"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:hint="Enter weight"
+                android:textSize="14sp"
+                android:textColor="#333333"
+                android:background="@drawable/bg_input_field"
+                android:padding="10dp"
+                android:inputType="numberDecimal"
+                android:layout_marginTop="8dp" />
+
+        </LinearLayout>
+
+        <!-- Calories -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Calories"
+                android:textSize="14sp"
+                android:textColor="#333333"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/etCalories"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:hint="Custom calories, optional"
+                android:textSize="14sp"
+                android:textColor="#333333"
+                android:background="@drawable/bg_input_field"
+                android:padding="10dp"
+                android:inputType="number" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <!-- Cancel Button -->
+        <TextView
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Cancel"
+            android:textSize="14sp"
+            android:textColor="#388E3C"
+            android:gravity="center"
+            android:background="@drawable/bg_button_cancel"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- Confirm Button -->
+        <TextView
+            android:id="@+id/btnConfirm"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Confirm"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:background="@drawable/bg_button_confirm"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+
+</LinearLayout>

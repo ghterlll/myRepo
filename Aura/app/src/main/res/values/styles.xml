@@ -1,0 +1,26 @@
+<resources>
+    <style name="Theme.Aura" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/auragreen_primary</item>
+        <item name="colorPrimaryVariant">@color/auragreen_primary_dark</item>
+        <item name="colorSecondary">@color/auragreen_secondary</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="android:navigationBarColor">@color/auragreen_primary</item>
+    </style>
+    <!-- 传入给 BottomSheetDialog 的样式 -->
+    <style name="TransparentBottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/TransparentBottomSheetStyle</item>
+    </style>
+
+    <!-- 底部弹窗自身的控件样式：透明背景 + 圆角 -->
+    <style name="TransparentBottomSheetStyle" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="shapeAppearanceOverlay">@style/SheetTopCorners</item>
+    </style>
+
+    <style name="SheetTopCorners">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">16dp</item>
+        <item name="cornerSizeTopRight">16dp</item>
+    </style>
+</resources>

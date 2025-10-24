@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/sheetCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="@drawable/bg_card_top_rounded"
+        android:elevation="8dp">
+
+        <!-- Header -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:padding="16dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="14:31"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"
+                android:layout_centerVertical="true" />
+
+            <ImageView
+                android:id="@+id/btnClose"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="20dp"
+                android:src="@drawable/ic_close"
+                android:scaleType="fitCenter"
+                android:padding="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
+        </RelativeLayout>
+
+        <!-- Food Information -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/ivFoodImage"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/placeholder"
+                android:scaleType="centerCrop"
+                android:background="@drawable/bg_card" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp">
+
+                <TextView
+                    android:id="@+id/tvFoodName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Food Item"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/black" />
+
+                <TextView
+                    android:id="@+id/tvCalories"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="100 calories"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:layout_marginTop="2dp" />
+
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/btnDelete"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_edit"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="4dp"
+                app:tint="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+        <!-- Quantity Input Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edible: 150g"
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:background="@drawable/bg_card"
+                android:padding="8dp">
+
+                <TextView
+                    android:id="@+id/tvQuantity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1.0"
+                    android:textSize="32sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/auragreen_primary"
+                    android:layout_marginEnd="8dp" />
+
+
+            </LinearLayout>
+
+            <!-- Unit Toggle Buttons -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:padding="4dp">
+
+                <TextView
+                    android:id="@+id/btnUnitToggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="g"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:background="@drawable/bg_drink_selected"
+                    android:padding="12dp"
+                    android:layout_marginEnd="4dp"
+                    android:minWidth="60dp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/tvUnit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="servings"
+                    android:textSize="14sp"
+                    android:textColor="@color/auragreen_primary"
+                    android:background="@drawable/bg_drink_selected"
+                    android:padding="12dp"
+                    android:minWidth="60dp"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Estimate Weight ②"
+                android:textSize="12sp"
+                android:textColor="@color/auragreen_primary"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="4dp" />
+
+        </LinearLayout>
+
+        <!-- Numeric Keypad -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:paddingBottom="24dp">
+
+            <!-- Row 1: 1, 2, 3 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btn1"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="1"
+                    android:textSize="20sp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+                <Button
+                    android:id="@+id/btn2"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="2"
+                    android:textSize="20sp"
+                    android:layout_marginHorizontal="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+                <Button
+                    android:id="@+id/btn3"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="3"
+                    android:textSize="20sp"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+            </LinearLayout>
+
+            <!-- Row 2: 4, 5, 6 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btn4"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="4"
+                    android:textSize="20sp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+                <Button
+                    android:id="@+id/btn5"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="5"
+                    android:textSize="20sp"
+                    android:layout_marginHorizontal="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+                <Button
+                    android:id="@+id/btn6"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="6"
+                    android:textSize="20sp"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+            </LinearLayout>
+
+            <!-- Row 3: 7, 8, 9 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btn7"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="7"
+                    android:textSize="20sp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+                <Button
+                    android:id="@+id/btn8"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="8"
+                    android:textSize="20sp"
+                    android:layout_marginHorizontal="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+                <Button
+                    android:id="@+id/btn9"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="9"
+                    android:textSize="20sp"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+            </LinearLayout>
+
+            <!-- Row 4: ., 0, Backspace -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnDecimal"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="."
+                    android:textSize="20sp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+                <Button
+                    android:id="@+id/btn0"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="0"
+                    android:textSize="20sp"
+                    android:layout_marginHorizontal="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+                <Button
+                    android:id="@+id/btnBackspace"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:text="⌫"
+                    android:textSize="16sp"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_keypad_green"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.AppCompat.Button.Borderless" />
+
+            </LinearLayout>
+
+            <!-- Confirm Button -->
+            <Button
+                android:id="@+id/btnConfirm"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="Confirm"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_confirm_green"
+                android:textColor="@android:color/white"
+                style="@style/Widget.AppCompat.Button.Borderless" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

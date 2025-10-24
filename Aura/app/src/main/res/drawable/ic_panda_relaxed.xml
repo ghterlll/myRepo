@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+    
+    <!-- Panda body (lying down) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:pathData="M10,50 Q10,30 40,30 Q70,30 70,50 Q70,70 40,70 Q10,70 10,50 Z" />
+    
+    <!-- Panda head -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:pathData="M40,7 A18,18 0 1,1 40,43 A18,18 0 1,1 40,7 Z" />
+    
+    <!-- Ears -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M30,8 A7,7 0 1,1 30,22 A7,7 0 1,1 30,8 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M50,8 A7,7 0 1,1 50,22 A7,7 0 1,1 50,8 Z" />
+    
+    <!-- Eyes (closed) -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M32,22 Q35,20 38,22" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M42,22 Q45,20 48,22" />
+    
+    <!-- Nose -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M40,26 A2,2 0 1,1 40,30 A2,2 0 1,1 40,26 Z" />
+    
+    <!-- Leaves around panda -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M15,60 Q20,55 25,60 Q20,65 15,60" />
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M55,60 Q60,55 65,60 Q60,65 55,60" />
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M25,70 Q30,65 35,70 Q30,75 25,70" />
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M45,70 Q50,65 55,70 Q50,75 45,70" />
+</vector>

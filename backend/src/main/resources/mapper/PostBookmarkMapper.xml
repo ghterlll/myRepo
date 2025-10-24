@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mobile.aura.mapper.PostBookmarkMapper">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.mobile.aura.domain.content.PostBookmark">
+        <result column="post_id" property="postId"/>
+        <result column="user_id" property="userId"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <!-- Count bookmarks for a user on a post -->
+    <select id="countBookmark" resultType="long">
+        SELECT COUNT(1) FROM post_bookmark
+        WHERE user_id = #{userId} AND post_id = #{postId}
+    </select>
+
+    <!-- Delete bookmark by user and post -->
+    <delete id="deleteBookmark">
+        DELETE FROM post_bookmark
+        WHERE user_id = #{userId} AND post_id = #{postId}
+    </delete>
+
+</mapper>

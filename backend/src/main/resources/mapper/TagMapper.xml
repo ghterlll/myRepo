@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mobile.aura.mapper.TagMapper">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.mobile.aura.domain.content.Tag">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="name_lc" property="nameLc"/>
+    </resultMap>
+
+    <!-- Find tag by lowercase name for case-insensitive lookup -->
+    <select id="findByNameLc" resultMap="BaseResultMap">
+        SELECT id, name, name_lc
+        FROM tags
+        WHERE name_lc = #{nameLc}
+        LIMIT 1
+    </select>
+
+    <!-- List tags with optional keyword search and cursor pagination -->
+    <select id="listTags" resultMap="BaseResultMap">
+        SELECT id, name, name_lc
+        FROM tags
+        <where>
+            <if test="keyword != null and keyword != ''">
+                name_lc LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="cursor != null and cursor != ''">
+                AND name_lc &gt; #{cursor}
+            </if>
+        </where>
+        ORDER BY name_lc ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- Find tags by post ID via post_tags join -->
+    <select id="findTagsByPostId" resultMap="BaseResultMap">
+        SELECT t.id, t.name, t.name_lc
+        FROM tags t
+        INNER JOIN post_tags pt ON t.id = pt.tag_id
+        WHERE pt.post_id = #{postId}
+        ORDER BY t.name ASC
+    </select>
+
+    <!-- List posts by tag ID with cursor pagination -->
+    <select id="listPostsByTagId" resultType="com.mobile.aura.domain.content.Post">
+        SELECT p.id, p.title, p.author_id, p.caption, p.visibility,
+               p.media_count, p.created_at, p.updated_at, p.deleted_at, p.status
+        FROM posts p
+        INNER JOIN post_tags pt ON p.id = pt.post_id
+        WHERE pt.tag_id = #{tagId}
+          AND p.visibility = 'public'
+          AND p.deleted_at IS NULL
+        <if test="cursorTimestamp != null">
+          AND (
+            p.created_at &lt; #{cursorTimestamp}
+            OR (p.created_at = #{cursorTimestamp} AND p.id &lt; #{cursorId})
+          )
+        </if>
+        ORDER BY p.created_at DESC, p.id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- Delete all post-tag associations for a given tag -->
+    <delete id="deletePostTagsByTagId">
+        DELETE FROM post_tags
+        WHERE tag_id = #{tagId}
+    </delete>
+
+    <!-- Delete all post-tag associations for a given post -->
+    <delete id="deletePostTagsByPostId">
+        DELETE FROM post_tags
+        WHERE post_id = #{postId}
+    </delete>
+
+</mapper>

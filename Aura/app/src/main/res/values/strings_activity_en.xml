@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- keep only CTA strings here -->
+    <string name="open_activity_map">Activity Map</string>
+    <string name="open_run_history">Run History</string>
+    <string name="open_steps_leaderboard">Steps Board</string>
+</resources>

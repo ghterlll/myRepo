@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mobile.aura.mapper.UserBlockMapper">
+
+    <!-- Check if either A blocks B or B blocks A -->
+    <select id="existsEither" resultType="int">
+        SELECT COUNT(1) FROM user_block
+        WHERE (blocker_id = #{a} AND blocked_id = #{b})
+           OR (blocker_id = #{b} AND blocked_id = #{a})
+        LIMIT 1
+    </select>
+
+    <!-- Count blocks where blocker_id = a and blocked_id = b -->
+    <select id="countBlock" resultType="long">
+        SELECT COUNT(1) FROM user_block
+        WHERE blocker_id = #{blockerId} AND blocked_id = #{blockedId}
+    </select>
+
+    <!-- Get paginated blocked users list -->
+    <select id="findBlockedUsers" resultType="long">
+        SELECT blocked_id
+        FROM user_block
+        WHERE blocker_id = #{blockerId}
+        <if test="cursorCreatedAt != null and cursorId != null">
+            AND (created_at &lt; #{cursorCreatedAt}
+                 OR (created_at = #{cursorCreatedAt} AND blocked_id &lt; #{cursorId}))
+        </if>
+        ORDER BY created_at DESC, blocked_id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- Delete block relationship by blocker and blocked -->
+    <delete id="deleteByBlockerAndBlocked">
+        DELETE FROM user_block
+        WHERE blocker_id = #{blockerId} AND blocked_id = #{blockedId}
+    </delete>
+
+</mapper>

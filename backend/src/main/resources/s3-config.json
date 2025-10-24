@@ -1,0 +1,18 @@
+{
+  "identities": [
+    {
+      "name": "aura-user",
+      "credentials": [
+        {
+          "accessKey": "aura-access-key",
+          "secretKey": "aura-secret-key-12345"
+        }
+      ],
+      "actions": ["Admin", "Read", "Write"]
+    },
+    {
+      "name": "anonymous",
+      "actions": ["Read"]
+    }
+  ]
+}

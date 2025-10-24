@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mobile.aura.mapper.UserFoodItemMapper">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.mobile.aura.domain.aggregate.UserFoodItem">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="name" property="name"/>
+        <result column="unit_name" property="unitName"/>
+        <result column="kcal_per_unit" property="kcalPerUnit"/>
+        <result column="image_url" property="imageUrl"/>
+        <result column="enabled" property="enabled"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <!-- Search with cursor pagination and optional keyword -->
+    <select id="searchWithCursor" resultMap="BaseResultMap">
+        SELECT id, user_id, name, unit_name, kcal_per_unit, image_url, enabled, created_at
+        FROM user_food_item
+        WHERE user_id = #{userId}
+        <if test="keyword != null and keyword != ''">
+            AND name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="cursor != null">
+            AND id &lt; #{cursor}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- List with cursor pagination -->
+    <select id="listWithCursor" resultMap="BaseResultMap">
+        SELECT id, user_id, name, unit_name, kcal_per_unit, image_url, enabled, created_at
+        FROM user_food_item
+        WHERE user_id = #{userId}
+        <if test="cursor != null">
+            AND id &lt; #{cursor}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- Delete by user ID and food item ID -->
+    <delete id="deleteByUserIdAndId">
+        DELETE FROM user_food_item
+        WHERE user_id = #{userId}
+        AND id = #{id}
+    </delete>
+
+</mapper>

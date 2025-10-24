@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="160dp"
+    android:viewportWidth="100"
+    android:viewportHeight="160">
+    
+    <!-- Water fill -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M10,10 L90,10 Q95,10 95,15 L95,145 Q95,150 90,150 L10,150 Q5,150 5,145 L5,15 Q5,10 10,10 Z" />
+    
+    <!-- Water surface -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M5,15 Q50,10 95,15 L95,20 Q50,15 5,20 Z" />
+</vector>

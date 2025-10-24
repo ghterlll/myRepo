@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 顶层权限（放在 <manifest> 内、<application> 外） -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- For picking images on older devices -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+    <!-- For Android 13+ media access -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+    <!-- Android 14+ 前台定位服务权限 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <!-- 如需完全后台定位，可再打开（可选）：
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    -->
+
+    <!-- Hardware features -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <application
+        android:allowBackup="true"
+        android:label="Aura"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Aura"
+        android:usesCleartextTraffic="true">
+        <activity android:name=".hub.RunHubActivity" />
+        <activity android:name=".RunMapActivity" />
+        <activity android:name=".history.RunHistoryActivity" />
+        <activity android:name=".history.RunDetailActivity" />
+        <activity android:name=".leaderboard.StepsLeaderboardActivity" />
+        <activity android:name=".PostDetailActivity" android:exported="false" />
+        <activity android:name=".FoodSelectionActivity" android:exported="false" />
+        <activity android:name=".WeightTrendActivity" android:exported="false" />
+
+        <!-- 跑步前台定位服务（必须在 <application> 内） -->
+        <service
+            android:name=".run.RunTrackingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+        <!-- Login Activity (Entry Point) -->
+        <activity android:name=".LoginActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <!-- Main Activity (no launcher; navigated to after login) -->
+        <activity android:name=".MainActivity" android:exported="false" />
+
+        <!-- Other Activities -->
+        <activity android:name=".WaterIntakeActivity" android:exported="false" />
+        <activity android:name=".WaterRecordActivity" android:exported="false" />
+        <activity android:name=".FoodCameraActivity" android:exported="false" />
+        <activity android:name=".FoodRecognitionActivity" android:exported="false" />
+        <activity android:name=".SearchActivity" android:exported="false" />
+        <activity android:name=".SearchResultsActivity" android:exported="false" />
+        <activity android:name=".ImagePreviewActivity" android:exported="false" />
+
+        <!-- FileProvider for camera image sharing -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.aura.starter.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

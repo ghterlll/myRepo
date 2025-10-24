@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Header bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="#CFE8D4"
+            android:gravity="center_vertical"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp">
+
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:padding="4dp"
+                android:src="@android:drawable/ic_media_previous"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Weight Trend"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:gravity="center" />
+
+            <Space android:layout_width="32dp" android:layout_height="32dp"/>
+        </LinearLayout>
+
+        <!-- Top spacer (reduced to pull modules up) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:gravity="center" />
+
+        <!-- Stats Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/bg_green_card">
+
+            <!-- circle summary -->
+            <LinearLayout
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_gravity="center"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total Lost"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="14sp"/>
+
+                <TextView
+                    android:id="@+id/tvLossTotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="+0.0 kg"
+                    android:textColor="#E35D5D"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- 3 columns with edit icon -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:weightSum="3">
+
+                <!-- Start -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Start"
+                        android:textColor="@android:color/darker_gray" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+                        <TextView
+                            android:id="@+id/tvStart"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.0 kg"
+                            android:textStyle="bold"
+                            android:textSize="18sp" />
+                        <ImageButton
+                            android:id="@+id/btnInlineEditStart"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginLeft="6dp"
+                            android:src="@drawable/ic_edit_green_outline"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Edit start"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Current -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Current"
+                        android:textColor="@android:color/darker_gray" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+                        <TextView
+                            android:id="@+id/tvCurrent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.0 kg"
+                            android:textStyle="bold"
+                            android:textColor="#54B266"
+                            android:textSize="18sp" />
+                        <ImageButton
+                            android:id="@+id/btnInlineEditCurrent"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginLeft="6dp"
+                            android:src="@drawable/ic_edit_green_outline"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Edit current"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvUpdatedAt"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="(updated …)"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+
+                <!-- Target -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Target"
+                        android:textColor="@android:color/darker_gray" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+                        <TextView
+                            android:id="@+id/tvTarget"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.0 kg"
+                            android:textStyle="bold"
+                            android:textSize="18sp" />
+                        <ImageButton
+                            android:id="@+id/btnInlineEditTarget"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginLeft="6dp"
+                            android:src="@drawable/ic_edit_green_outline"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Edit target"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Chart Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="280dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_green_card"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvChartTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Weight"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginTop="4dp" />
+
+                <com.aura.starter.view.TrendChartView
+                    android:id="@+id/trendChart"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Record button -->
+        <Button
+            android:id="@+id/btnAddWeight"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_margin="16dp"
+            android:text="+ Record Weight"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:textColor="@android:color/black"
+            android:background="#CFE8D4"/>
+    </LinearLayout>
+</ScrollView>

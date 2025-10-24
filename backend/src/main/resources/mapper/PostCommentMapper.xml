@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mobile.aura.mapper.PostCommentMapper">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.mobile.aura.domain.content.PostComment">
+        <id column="id" property="id"/>
+        <result column="post_id" property="postId"/>
+        <result column="author_id" property="authorId"/>
+        <result column="root_id" property="rootId"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="content" property="content"/>
+        <result column="reply_count" property="replyCount"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="deleted_at" property="deletedAt"/>
+    </resultMap>
+
+    <!-- Increment reply count -->
+    <update id="incReplyCount">
+        UPDATE post_comment
+        SET reply_count = GREATEST(0, reply_count + #{delta})
+        WHERE id = #{id}
+    </update>
+
+    <!-- List root comments with cursor pagination -->
+    <select id="listRootComments" resultMap="BaseResultMap">
+        SELECT id, post_id, author_id, root_id, parent_id, content, reply_count, created_at, deleted_at
+        FROM post_comment
+        WHERE post_id = #{postId}
+          AND deleted_at IS NULL
+          AND (root_id = id OR root_id IS NULL)
+        <if test="cursorTimestamp != null">
+          AND (
+            created_at &lt; #{cursorTimestamp}
+            OR (created_at = #{cursorTimestamp} AND id &lt; #{cursorId})
+          )
+        </if>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- List preview replies for a root comment -->
+    <select id="listPreviewReplies" resultMap="BaseResultMap">
+        SELECT id, post_id, author_id, root_id, parent_id, content, reply_count, created_at, deleted_at
+        FROM post_comment
+        WHERE post_id = #{postId}
+          AND root_id = #{rootId}
+          AND deleted_at IS NULL
+          AND id != #{rootId}
+        ORDER BY created_at ASC, id ASC
+        LIMIT #{previewSize}
+    </select>
+
+    <!-- List all replies for a root comment with cursor pagination -->
+    <select id="listReplies" resultMap="BaseResultMap">
+        SELECT id, post_id, author_id, root_id, parent_id, content, reply_count, created_at, deleted_at
+        FROM post_comment
+        WHERE post_id = #{postId}
+          AND root_id = #{rootId}
+          AND deleted_at IS NULL
+          AND id != #{rootId}
+        <if test="cursorTimestamp != null">
+          AND (
+            created_at &gt; #{cursorTimestamp}
+            OR (created_at = #{cursorTimestamp} AND id &gt; #{cursorId})
+          )
+        </if>
+        ORDER BY created_at ASC, id ASC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <org.osmdroid.views.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true" />
+
+    <!-- 跑步统计 HUD（注意自闭合 />） -->
+    <TextView
+        android:id="@+id/tvRunStats"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|top"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:padding="8dp"
+        android:background="#80FFFFFF"
+        android:textColor="#000000"
+        android:textSize="14sp"
+        android:text="@string/run_stats_placeholder" />
+
+    <!-- 右下角按钮栈 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp">
+
+        <ImageButton
+            android:id="@+id/btnMyLocation"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="@string/my_location"
+            android:padding="8dp"
+            android:src="@drawable/ic_my_location_24" />
+
+        <ImageButton
+            android:id="@+id/btnRecenter"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="@string/recenter"
+            android:padding="8dp"
+            android:src="@drawable/ic_gps_fixed_24" />
+
+        <ImageButton
+            android:id="@+id/btnStartRun"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="@string/start_run"
+            android:padding="8dp"
+            android:src="@drawable/ic_run_start_24" />
+
+        <ImageButton
+            android:id="@+id/btnStopRun"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="@string/stop_run"
+            android:padding="8dp"
+            android:src="@drawable/ic_run_stop_24"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- 左下角帮助按钮 -->
+    <ImageButton
+        android:id="@+id/btnHelp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="start|bottom"
+        android:layout_margin="16dp"
+        android:background="?android:selectableItemBackgroundBorderless"
+        android:contentDescription="@string/help"
+        android:padding="6dp"
+        android:src="@drawable/ic_navigation_24"
+        android:alpha="0.65" />
+</FrameLayout>

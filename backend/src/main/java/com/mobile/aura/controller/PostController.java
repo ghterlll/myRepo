@@ -1,0 +1,307 @@
+package com.mobile.aura.controller;
+
+import com.mobile.aura.dto.PageResponse;
+import com.mobile.aura.dto.ResponseResult;
+import com.mobile.aura.dto.post.*;
+import com.mobile.aura.service.PostService;
+import com.mobile.aura.support.JwtAuthInterceptor;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * REST controller for post-related operations.
+ * Provides endpoints for post CRUD operations, social interactions (like, bookmark),
+ * and comment management with nested reply support.
+ *
+ * <p>All endpoints require authentication via JWT token.
+ *
+ * @author Aura Team
+ * @version 1.0
+ */
+@Validated
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/post")
+public class PostController {
+
+    private static final String ATTR_USER_ID = JwtAuthInterceptor.ATTR_USER_ID;
+
+    private final PostService postService;
+
+    // ==================== Post CRUD Operations ====================
+
+    /**
+     * Create a new post.
+     *
+     * @param userId the authenticated user ID
+     * @param req post creation request with title, caption, and media
+     * @return response containing the newly created post ID
+     */
+    @PostMapping
+    public ResponseResult<Map<String, Long>> create(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @Valid @RequestBody PostCreateReq req) {
+        Long postId = postService.create(userId, req);
+        return ResponseResult.success(Map.of("id", postId));
+    }
+
+    /**
+     * Update an existing post.
+     *
+     * @param userId the authenticated user ID (must be post author)
+     * @param postId the post ID to update
+     * @param req update request with new title and/or caption
+     * @return success response
+     */
+    @PatchMapping("/{postId}")
+    public ResponseResult<Void> update(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId,
+            @Valid @RequestBody PostUpdateReq req) {
+        postService.update(postId, userId, req);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Replace all media items in a post.
+     *
+     * @param userId the authenticated user ID (must be post author)
+     * @param postId the post ID
+     * @param medias new list of media items
+     * @return success response
+     */
+    @PutMapping("/{postId}/media")
+    public ResponseResult<Void> replaceMedia(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId,
+            @RequestBody List<@Valid MediaItem> medias) {
+        postService.replaceMedia(postId, userId, medias);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Publish a post (make it publicly visible).
+     *
+     * @param userId the authenticated user ID (must be post author)
+     * @param postId the post ID to publish
+     * @return success response
+     */
+    @PostMapping("/{postId}/publish")
+    public ResponseResult<Void> publish(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId) {
+        postService.publish(postId, userId);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Hide a post (change to draft status).
+     *
+     * @param userId the authenticated user ID (must be post author)
+     * @param postId the post ID to hide
+     * @return success response
+     */
+    @PostMapping("/{postId}/hide")
+    public ResponseResult<Void> hide(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId) {
+        postService.hide(postId, userId);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Delete a post (soft delete).
+     *
+     * @param userId the authenticated user ID (must be post author)
+     * @param postId the post ID to delete
+     * @return success response
+     */
+    @DeleteMapping("/{postId}")
+    public ResponseResult<Void> delete(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId) {
+        postService.delete(postId, userId);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Get detailed information about a post.
+     *
+     * @param userId the authenticated user ID
+     * @param postId the post ID to retrieve
+     * @return post details including media and tags
+     */
+    @GetMapping("/{postId}")
+    public ResponseResult<PostDetailResp> detail(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId) {
+        return ResponseResult.success(postService.detail(userId, postId));
+    }
+
+    // ==================== Post List Operations ====================
+
+    /**
+     * List public posts with cursor-based pagination.
+     *
+     * @param userId the authenticated user ID
+     * @param req pagination request with limit and cursor
+     * @return paginated response with post cards
+     */
+    @GetMapping
+    public ResponseResult<PageResponse<PostCardResp>> listPublic(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @Valid @ModelAttribute PostListReq req) {
+        return ResponseResult.success(postService.listPublic(userId, req.getLimit(), req.getCursor()));
+    }
+
+    /**
+     * List posts from users that the current user follows.
+     *
+     * @param userId the authenticated user ID
+     * @param req pagination request with limit and cursor
+     * @return paginated response with post cards from followed users
+     */
+    @GetMapping("/feed/followings")
+    public ResponseResult<PageResponse<PostCardResp>> followFeed(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @Valid @ModelAttribute PostListReq req) {
+        return ResponseResult.success(postService.listFollowFeed(userId, req.getLimit(), req.getCursor()));
+    }
+
+    // ==================== Social Interaction Operations ====================
+
+    /**
+     * Like a post.
+     *
+     * @param userId the authenticated user ID
+     * @param postId the post ID to like
+     * @return success response
+     */
+    @PostMapping("/{postId}/like")
+    public ResponseResult<Void> like(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId) {
+        postService.like(userId, postId);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Unlike a post (remove like).
+     *
+     * @param userId the authenticated user ID
+     * @param postId the post ID to unlike
+     * @return success response
+     */
+    @DeleteMapping("/{postId}/like")
+    public ResponseResult<Void> unlike(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId) {
+        postService.unlike(userId, postId);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Bookmark a post.
+     *
+     * @param userId the authenticated user ID
+     * @param postId the post ID to bookmark
+     * @return success response
+     */
+    @PostMapping("/{postId}/bookmark")
+    public ResponseResult<Void> bookmark(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId) {
+        postService.bookmark(userId, postId);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Remove bookmark from a post.
+     *
+     * @param userId the authenticated user ID
+     * @param postId the post ID to unbookmark
+     * @return success response
+     */
+    @DeleteMapping("/{postId}/bookmark")
+    public ResponseResult<Void> unbookmark(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId) {
+        postService.unbookmark(userId, postId);
+        return ResponseResult.success();
+    }
+
+    // ==================== Comment Operations ====================
+
+    /**
+     * Create a comment on a post.
+     * Supports nested comments by providing a parent comment ID.
+     *
+     * @param userId the authenticated user ID
+     * @param postId the post ID to comment on
+     * @param req comment creation request with content and optional parent ID
+     * @return response containing the newly created comment ID
+     */
+    @PostMapping("/{postId}/comments")
+    public ResponseResult<Map<String, Long>> createComment(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId,
+            @Valid @RequestBody CommentCreateReq req) {
+        Long commentId = postService.createComment(userId, postId, req);
+        return ResponseResult.success(Map.of("id", commentId));
+    }
+
+    /**
+     * Delete a comment.
+     * Only the comment author or post author can delete the comment.
+     *
+     * @param userId the authenticated user ID
+     * @param commentId the comment ID to delete
+     * @return success response
+     */
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseResult<Void> deleteComment(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long commentId) {
+        postService.deleteComment(userId, commentId);
+        return ResponseResult.success();
+    }
+
+    /**
+     * List root-level comments for a post with pagination.
+     * Includes a preview of nested replies for each root comment.
+     *
+     * @param userId the authenticated user ID
+     * @param postId the post ID
+     * @param req pagination request with limit, cursor, and preview size
+     * @return paginated response with comment threads (root comment + preview replies)
+     */
+    @GetMapping("/{postId}/comments")
+    public ResponseResult<PageResponse<CommentThreadResp>> listRootComments(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId,
+            @Valid @ModelAttribute CommentListReq req) {
+        return ResponseResult.success(postService.listRootComments(
+                userId, postId, req.getLimit(), req.getCursor(), req.getPreviewSize()));
+    }
+
+    /**
+     * List all replies to a specific root comment with pagination.
+     *
+     * @param userId the authenticated user ID
+     * @param rootCommentId the ID of the root comment
+     * @param req pagination request with limit and cursor
+     * @return paginated response with reply comments
+     */
+    @GetMapping("/comments/{rootCommentId}/replies")
+    public ResponseResult<PageResponse<CommentResp>> listReplies(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long rootCommentId,
+            @Valid @ModelAttribute PostListReq req) {
+        return ResponseResult.success(postService.listReplies(userId, rootCommentId, req.getLimit(), req.getCursor()));
+    }
+}

@@ -1,0 +1,13 @@
+<resources>
+    <string name="tab_run">Run</string>
+    <string name="app_name">Aura</string>
+    <string name="tab_record">Record</string>
+    <string name="tab_posts">Posts</string>
+    <string name="tab_new_post">New Post</string>
+    <string name="tab_profile">Profile</string>
+    <string name="tab_bookmarks">Bookmarks</string>
+    <string name="recenter">Re-center</string>
+    <string name="my_location">My location</string>
+    <string name="help">Help</string>
+    <string name="run_stats_placeholder">0.00 km | 0′00″/km | 00:00</string>
+</resources>

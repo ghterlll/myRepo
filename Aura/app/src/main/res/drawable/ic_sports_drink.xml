@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    
+    <!-- Bottle -->
+    <path
+        android:fillColor="#E1F5FE"
+        android:strokeColor="#00BCD4"
+        android:strokeWidth="1"
+        android:pathData="M12,4 L12,6 Q12,8 14,8 L18,8 Q20,8 20,6 L20,4 L22,4 L22,26 Q22,28 20,28 L12,28 Q10,28 10,26 L10,4 Z" />
+    
+    <!-- Cap -->
+    <path
+        android:fillColor="#00BCD4"
+        android:pathData="M10,4 L22,4 L22,6 L10,6 Z" />
+    
+    <!-- Label -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,8 L20,8 L20,16 L12,16 Z" />
+    
+    <!-- Lightning bolt -->
+    <path
+        android:fillColor="#00BCD4"
+        android:pathData="M15,10 L17,10 L16,14 L18,14 L15,18 L17,18 L16,14 L14,14 Z" />
+</vector>

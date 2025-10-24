@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mobile.aura.mapper.UserHealthProfileMapper">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.mobile.aura.domain.user.UserHealthProfile">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="height_cm" property="heightCm"/>
+        <result column="initial_weight_kg" property="initialWeightKg"/>
+        <result column="initial_weight_at" property="initialWeightAt"/>
+        <result column="latest_weight_kg" property="latestWeightKg"/>
+        <result column="latest_weight_at" property="latestWeightAt"/>
+        <result column="target_weight_kg" property="targetWeightKg"/>
+        <result column="target_deadline" property="targetDeadline"/>
+        <result column="diet_rule" property="dietRule"/>
+        <result column="activity_lvl" property="activityLvl"/>
+        <result column="goal_water_intake_ml" property="goalWaterIntakeMl"/>
+        <result column="quick_records_ml" property="quickRecordsMl"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!-- Find health profile by user ID -->
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT id, user_id, height_cm, initial_weight_kg, initial_weight_at,
+               latest_weight_kg, latest_weight_at, target_weight_kg, target_deadline,
+               diet_rule, activity_lvl, goal_water_intake_ml, quick_records_ml,
+               created_at, updated_at
+        FROM user_health_profile
+        WHERE user_id = #{userId}
+        LIMIT 1
+    </select>
+
+</mapper>

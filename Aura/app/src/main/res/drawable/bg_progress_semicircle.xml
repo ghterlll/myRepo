@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background semicircle -->
+    <item android:id="@android:id/background">
+        <shape android:shape="oval">
+            <solid android:color="#E8F5E8" />
+            <size android:width="200dp" android:height="100dp" />
+        </shape>
+    </item>
+    <!-- Progress semicircle (will be drawn programmatically) -->
+    <item android:id="@android:id/progress">
+        <shape android:shape="oval">
+            <solid android:color="#388E3C" />
+            <size android:width="200dp" android:height="100dp" />
+        </shape>
+    </item>
+</layer-list>

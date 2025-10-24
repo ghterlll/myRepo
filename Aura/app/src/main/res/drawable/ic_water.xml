@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    
+    <!-- Glass -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:strokeColor="#1976D2"
+        android:strokeWidth="1"
+        android:pathData="M8,6 L8,24 Q8,26 10,26 L22,26 Q24,26 24,24 L24,6 Q24,4 22,4 L10,4 Q8,4 8,6 Z" />
+    
+    <!-- Water -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M10,8 L22,8 L22,22 L10,22 Z" />
+    
+    <!-- Water surface -->
+    <path
+        android:fillColor="#90CAF9"
+        android:pathData="M10,8 Q16,6 22,8 L22,10 Q16,8 10,10 Z" />
+</vector>

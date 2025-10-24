@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mobile.aura.mapper.PostMediaMapper">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.mobile.aura.domain.content.PostMedia">
+        <id column="id" property="id"/>
+        <result column="post_id" property="postId"/>
+        <result column="media_type" property="mediaType"/>
+        <result column="object_key" property="objectKey"/>
+        <result column="url" property="url"/>
+        <result column="width" property="width"/>
+        <result column="height" property="height"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="blurhash" property="blurhash"/>
+        <result column="checksum" property="checksum"/>
+        <result column="bytes" property="bytes"/>
+        <result column="mime_type" property="mimeType"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <!-- List all media for a post, ordered by sort_order -->
+    <select id="listByPostId" resultMap="BaseResultMap">
+        SELECT id, post_id, media_type, object_key, url, width, height,
+               sort_order, blurhash, checksum, bytes, mime_type, created_at
+        FROM post_media
+        WHERE post_id = #{postId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- Find first media for a post (cover image) -->
+    <select id="findFirstByPostId" resultMap="BaseResultMap">
+        SELECT id, post_id, media_type, object_key, url, width, height,
+               sort_order, blurhash, checksum, bytes, mime_type, created_at
+        FROM post_media
+        WHERE post_id = #{postId}
+        ORDER BY sort_order ASC, id ASC
+        LIMIT 1
+    </select>
+
+    <!-- Delete all media for a post -->
+    <delete id="deleteByPostId">
+        DELETE FROM post_media WHERE post_id = #{postId}
+    </delete>
+
+</mapper>

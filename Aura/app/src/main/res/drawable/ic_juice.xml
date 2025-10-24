@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    
+    <!-- Glass -->
+    <path
+        android:fillColor="#FFF3E0"
+        android:strokeColor="#FF9800"
+        android:strokeWidth="1"
+        android:pathData="M8,6 L8,24 Q8,26 10,26 L22,26 Q24,26 24,24 L24,6 Q24,4 22,4 L10,4 Q8,4 8,6 Z" />
+    
+    <!-- Juice -->
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M10,8 L22,8 L22,22 L10,22 Z" />
+    
+    <!-- Orange slice -->
+    <path
+        android:fillColor="#FF8F00"
+        android:pathData="M14,12 Q16,10 18,12 Q16,14 14,12" />
+    <path
+        android:fillColor="#FF8F00"
+        android:pathData="M16,14 Q18,12 20,14 Q18,16 16,14" />
+</vector>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mobile.aura.mapper.UserSocialStatsMapper">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.mobile.aura.domain.user.UserSocialStats">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="follow_count" property="followCount"/>
+        <result column="fans_count" property="fansCount"/>
+        <result column="post_count" property="postCount"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!-- Increment or decrement follow count -->
+    <update id="incFollowCount">
+        UPDATE user_social_stats
+        SET follow_count = GREATEST(0, follow_count + #{delta})
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- Increment or decrement fans count -->
+    <update id="incFansCount">
+        UPDATE user_social_stats
+        SET fans_count = GREATEST(0, fans_count + #{delta})
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- Increment or decrement post count -->
+    <update id="incPostCount">
+        UPDATE user_social_stats
+        SET post_count = GREATEST(0, post_count + #{delta})
+        WHERE user_id = #{userId}
+    </update>
+
+</mapper>

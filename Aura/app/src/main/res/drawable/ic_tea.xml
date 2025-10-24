@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    
+    <!-- Cup -->
+    <path
+        android:fillColor="#FFF3E0"
+        android:strokeColor="#FF9800"
+        android:strokeWidth="1"
+        android:pathData="M8,8 L8,24 Q8,26 10,26 L22,26 Q24,26 24,24 L24,8 L22,8 L22,6 L10,6 L8,8 Z" />
+    
+    <!-- Tea -->
+    <path
+        android:fillColor="#8D6E63"
+        android:pathData="M10,10 L22,10 L22,22 L10,22 Z" />
+    
+    <!-- Steam -->
+    <path
+        android:fillColor="#FF9800"
+        android:strokeWidth="1"
+        android:pathData="M14,4 Q16,2 18,4 Q16,6 14,4" />
+    <path
+        android:fillColor="#FF9800"
+        android:strokeWidth="1"
+        android:pathData="M18,4 Q20,2 22,4 Q20,6 18,4" />
+</vector>

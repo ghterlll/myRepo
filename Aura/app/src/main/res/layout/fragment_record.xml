@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Date strip: 7 days centered on today + chevron to pick other dates -->
+        <LinearLayout
+            android:id="@+id/dateStrip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_chip_green"
+            android:padding="10dp">
+            <LinearLayout
+                android:id="@+id/daysContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:dividerPadding="6dp">
+            </LinearLayout>
+            <ImageView
+                android:id="@+id/btnDateChevron"
+                android:src="@drawable/ic_chevron_down_green"
+                android:layout_width="20dp" android:layout_height="20dp"/>
+        </LinearLayout>
+
+        <!-- Summary gauge placeholder -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Calories"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginTop="15dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:padding="12dp"
+            android:layout_marginTop="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <!-- Intake column -->
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <TextView android:text="intake" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                    <TextView android:id="@+id/tvIntake" android:text="0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textStyle="bold"/>
+                </LinearLayout>
+
+                <!-- Left column (center) -->
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <TextView android:text="left" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                    <TextView
+                        android:id="@+id/tvCaloriesLeft"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1600"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:textColor="#388E3C"/>
+                </LinearLayout>
+
+                <!-- Burn column -->
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <TextView android:text="burn" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                    <TextView android:id="@+id/tvBurn" android:text="0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textStyle="bold"/>
+                </LinearLayout>
+            </LinearLayout>
+            <!-- Meals row with bordered chips and icons -->
+            <LinearLayout android:id="@+id/mealsContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="10dp">
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/bg_meal_chip" android:padding="8dp" android:layout_marginRight="6dp">
+                    <ImageView android:src="@drawable/ic_breakfast" android:layout_width="24dp" android:layout_height="24dp"/>
+                    <TextView android:text="breakfast" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                    <ImageView android:src="@drawable/ic_add" android:layout_width="16dp" android:layout_height="16dp" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/bg_meal_chip" android:padding="8dp" android:layout_marginRight="6dp">
+                    <ImageView android:src="@drawable/ic_lunch" android:layout_width="24dp" android:layout_height="24dp"/>
+                    <TextView android:text="lunch" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                    <ImageView android:src="@drawable/ic_add" android:layout_width="16dp" android:layout_height="16dp" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/bg_meal_chip" android:padding="8dp" android:layout_marginRight="6dp">
+                    <ImageView android:src="@drawable/ic_dinner" android:layout_width="24dp" android:layout_height="24dp"/>
+                    <TextView android:text="dinner" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                    <ImageView android:src="@drawable/ic_add" android:layout_width="16dp" android:layout_height="16dp" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="@drawable/bg_meal_chip" android:padding="8dp">
+                    <ImageView android:src="@drawable/ic_snack" android:layout_width="24dp" android:layout_height="24dp"/>
+                    <TextView android:text="snack" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                    <ImageView android:src="@drawable/ic_add" android:layout_width="16dp" android:layout_height="16dp" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Meal sections removed per request -->
+
+        <!-- Quick actions removed per request -->
+
+        <!-- Single camera icon between meals and stats -->
+        <LinearLayout android:id="@+id/homeCameraWrap" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:layout_marginTop="8dp">
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_camera_circle" android:padding="16dp" android:gravity="center">
+                <ImageView android:src="@drawable/ic_camera_green" android:layout_width="56dp" android:layout_height="56dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Food Records Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Today's Food Records"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginTop="15dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="150dp"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:padding="12dp"
+            android:layout_marginTop="8dp">
+            
+            <!-- Food items list placeholder -->
+            <LinearLayout 
+                android:id="@+id/foodRecordsContainer"
+                android:layout_width="match_parent" 
+                android:layout_height="wrap_content" 
+                android:orientation="vertical" 
+                android:gravity="center">
+                <TextView 
+                    android:id="@+id/tvNoFoodRecords"
+                    android:text="No food recorded today~" 
+                    android:layout_width="wrap_content" 
+                    android:layout_height="wrap_content" 
+                    android:gravity="center" 
+                    android:layout_marginTop="20dp" 
+                    android:layout_marginBottom="20dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Weight tracking cards -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="12dp">
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_meal_chip" android:padding="12dp" android:layout_marginRight="8dp" android:gravity="center">
+                <TextView android:text="Weight Lost" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <TextView android:id="@+id/tvWeightLost" android:text="0.0 kg" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+                <LinearLayout android:id="@+id/currentWeightCard" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_meal_chip" android:padding="12dp" android:gravity="center">
+                <TextView android:text="Current Weight" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <TextView android:id="@+id/tvCurrentWeight" android:text="70.0 kg" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Steps and water cards -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="12dp">
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_meal_chip" android:padding="12dp" android:layout_marginRight="8dp" android:gravity="center">
+                <TextView android:text="Steps" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <TextView android:id="@+id/tvSteps" android:text="0" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+            <LinearLayout android:id="@+id/waterCard" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_meal_chip" android:padding="12dp" android:gravity="center">
+                <TextView android:text="Water" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <TextView android:id="@+id/tvWater" android:text="0/2800ml" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Embedded map (MapFragment hosted here) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="154dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_card"
+            android:gravity="center">
+
+            <include layout="@layout/include_home_start_run" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
+
+

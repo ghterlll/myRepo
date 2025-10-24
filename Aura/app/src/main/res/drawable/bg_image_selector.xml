@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 默认状态 -->
+    <item android:drawable="@drawable/bg_add_image" />
+    <!-- 点击状态 -->
+    <item android:state_pressed="true">
+        <shape>
+            <solid android:color="#E0E0E0" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+</selector>

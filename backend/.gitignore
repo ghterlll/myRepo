@@ -1,0 +1,20 @@
+# SeaweedFS data directory
+data/
+
+# Maven
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Temp files
+*.tmp
+*.jpg
