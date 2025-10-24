@@ -1,13 +1,16 @@
 // file: com/example/demo2/controller/UserController.java
 package com.mobile.aura.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mobile.aura.constant.CommonStatusEnum;
+import com.mobile.aura.domain.user.User;
 import com.mobile.aura.dto.auth.SendResetCodeReq;
 import com.mobile.aura.dto.token.RefreshReq;
 import com.mobile.aura.dto.ResponseResult;
 import com.mobile.aura.dto.user.ResetPasswordReq;
 import com.mobile.aura.dto.user.UserDtos.*;
 import com.mobile.aura.dto.user.UserProfileUpdateReq;
+import com.mobile.aura.mapper.UserMapper;
 import com.mobile.aura.service.EmailCodeService;
 import com.mobile.aura.service.UserProfileService;
 import com.mobile.aura.service.UserService;
@@ -28,6 +31,7 @@ public class UserController {
     private final UserService userService;
     private final UserProfileService profileService;
     private final EmailCodeService emailCodeService;
+    private final UserMapper userMapper;
 
     /**
      * Official registration endpoint
@@ -52,7 +56,16 @@ public class UserController {
      */
     @PostMapping("/register/code")
     public ResponseResult<?> sendRegistrationCode(@Valid @RequestBody SendRegistrationCodeReq req) {
-        emailCodeService.sendRegistrationCode(req.getEmail());
+        // Find user by email to get userId
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getEmail, req.getEmail()));
+
+        if (user == null) {
+            return ResponseResult.fail(CommonStatusEnum.USER_NOT_FOUND.getCode(),
+                    "User not found with email: " + req.getEmail());
+        }
+
+        emailCodeService.sendRegistrationCode(user.getId(), req.getEmail());
         return ResponseResult.success();
     }
 
