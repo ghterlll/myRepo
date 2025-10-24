@@ -26,6 +26,7 @@ public class DraggableFloatingButton extends View {
     private static final float BUTTON_SIZE = 56f; // dp
     private static final float DRAG_THRESHOLD = 10f; // dp
     private static final float MARGIN_FROM_EDGE = 16f; // dp
+    private static final float BOTTOM_NAV_HEIGHT = 56f; // dp - bottom navigation bar height
     private static final int SNAP_ANIMATION_DURATION = 300; // ms
 
     private Paint buttonPaint;
@@ -162,7 +163,8 @@ public class DraggableFloatingButton extends View {
                     // Constrain within screen bounds
                     float maxX = screenWidth - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
                     float minX = dpToPx(MARGIN_FROM_EDGE);
-                    float maxY = screenHeight - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
+                    // Prevent dragging into bottom navigation bar area
+                    float maxY = screenHeight - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE + BOTTOM_NAV_HEIGHT);
                     float minY = dpToPx(MARGIN_FROM_EDGE);
 
                     newX = Math.max(minX, Math.min(maxX, newX));
