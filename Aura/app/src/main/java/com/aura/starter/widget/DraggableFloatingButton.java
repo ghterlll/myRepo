@@ -10,12 +10,11 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
+import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import androidx.annotation.Nullable;
@@ -27,14 +26,24 @@ public class DraggableFloatingButton extends View {
     private static final float BUTTON_SIZE = 56f; // dp
     private static final float DRAG_THRESHOLD = 10f; // dp
     private static final float MARGIN_FROM_EDGE = 16f; // dp
+    private static final int SNAP_ANIMATION_DURATION = 300; // ms
 
     private Paint buttonPaint;
     private Paint ripplePaint;
+
+    // Touch tracking
+    private float startX;
     private float startY;
+    private float dX;
     private float dY;
     private boolean isDragging = false;
-    private float rippleRadius = 0f;
+
+    // Screen dimensions
+    private int screenWidth;
     private int screenHeight;
+
+    // Animation
+    private float rippleRadius = 0f;
 
     private OnClickListener clickListener;
 
@@ -49,22 +58,33 @@ public class DraggableFloatingButton extends View {
     }
 
     private void init(Context context) {
+        // Initialize paints
         buttonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         buttonPaint.setColor(ContextCompat.getColor(context, R.color.auragreen_primary));
         buttonPaint.setStyle(Paint.Style.FILL);
 
         ripplePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         ripplePaint.setStyle(Paint.Style.FILL);
+
+        // Get screen dimensions
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics metrics = new DisplayMetrics();
+        wm.getDefaultDisplay().getMetrics(metrics);
+        screenWidth = metrics.widthPixels;
+        screenHeight = metrics.heightPixels;
     }
 
     @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        screenHeight = h;
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
 
-        // Initial position: right-bottom corner, above bottom navigation
-        if (getTranslationY() == 0) {
-            // Position at bottom-right, accounting for bottom nav (~56dp) + margin
+        // Set initial position: bottom-right corner
+        if (getTranslationX() == 0 && getTranslationY() == 0) {
+            // X position: right edge with margin
+            float initialX = screenWidth - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
+            setTranslationX(initialX);
+
+            // Y position: bottom with margin, accounting for bottom nav (~56dp)
             float initialY = screenHeight - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE + 56);
             setTranslationY(initialY);
         }
@@ -118,25 +138,37 @@ public class DraggableFloatingButton extends View {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                // Record initial touch position
+                startX = event.getRawX();
                 startY = event.getRawY();
+                dX = getTranslationX() - event.getRawX();
                 dY = getTranslationY() - event.getRawY();
                 isDragging = false;
                 playPressAnimation();
                 return true;
 
             case MotionEvent.ACTION_MOVE:
+                float deltaX = Math.abs(event.getRawX() - startX);
                 float deltaY = Math.abs(event.getRawY() - startY);
+                float totalDelta = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-                if (deltaY > dpToPx(DRAG_THRESHOLD)) {
+                if (totalDelta > dpToPx(DRAG_THRESHOLD)) {
                     isDragging = true;
 
-                    // Only allow vertical movement
+                    // Allow free movement in both X and Y directions
+                    float newX = event.getRawX() + dX;
                     float newY = event.getRawY() + dY;
+
                     // Constrain within screen bounds
+                    float maxX = screenWidth - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
+                    float minX = dpToPx(MARGIN_FROM_EDGE);
                     float maxY = screenHeight - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
                     float minY = dpToPx(MARGIN_FROM_EDGE);
+
+                    newX = Math.max(minX, Math.min(maxX, newX));
                     newY = Math.max(minY, Math.min(maxY, newY));
 
+                    setTranslationX(newX);
                     setTranslationY(newY);
                 }
                 return true;
@@ -146,19 +178,63 @@ public class DraggableFloatingButton extends View {
                     // Normal click (no drag)
                     handleClick();
                 } else {
-                    // Just dragged, release animation only
-                    playReleaseAnimation();
+                    // Was dragging - snap to nearest edge
+                    snapToNearestEdge();
                 }
 
                 isDragging = false;
                 return true;
 
             case MotionEvent.ACTION_CANCEL:
-                playReleaseAnimation();
+                if (isDragging) {
+                    snapToNearestEdge();
+                } else {
+                    playReleaseAnimation();
+                }
                 isDragging = false;
                 return true;
         }
         return super.onTouchEvent(event);
+    }
+
+    /**
+     * Snap button to the nearest vertical edge (left or right)
+     * Keeps the current Y position unchanged
+     */
+    private void snapToNearestEdge() {
+        float currentX = getTranslationX();
+        float currentY = getTranslationY();
+
+        // Calculate center of button
+        float buttonCenterX = currentX + dpToPx(BUTTON_SIZE) / 2f;
+        float screenCenterX = screenWidth / 2f;
+
+        // Determine target X position (left or right edge)
+        float targetX;
+        if (buttonCenterX < screenCenterX) {
+            // Snap to left edge
+            targetX = dpToPx(MARGIN_FROM_EDGE);
+        } else {
+            // Snap to right edge
+            targetX = screenWidth - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
+        }
+
+        // Animate to target position
+        ObjectAnimator animX = ObjectAnimator.ofFloat(this, "translationX", currentX, targetX);
+        animX.setDuration(SNAP_ANIMATION_DURATION);
+        animX.setInterpolator(new OvershootInterpolator(1.2f));
+
+        // Also play release animation
+        AnimatorSet animSet = new AnimatorSet();
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, "scaleX", 0.9f, 1.0f);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, "scaleY", 0.9f, 1.0f);
+        scaleX.setDuration(200);
+        scaleY.setDuration(200);
+        scaleX.setInterpolator(new OvershootInterpolator());
+        scaleY.setInterpolator(new OvershootInterpolator());
+
+        animSet.playTogether(animX, scaleX, scaleY);
+        animSet.start();
     }
 
     private void handleClick() {
