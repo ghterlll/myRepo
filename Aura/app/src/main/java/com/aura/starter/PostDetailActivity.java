@@ -19,19 +19,8 @@ import com.bumptech.glide.Glide;
 
 public class PostDetailActivity extends AppCompatActivity {
     private Post post;
-    private ImageButton btnLike, btnBookmark, btnPick;
+    private ImageButton btnLike, btnBookmark, btnBack;
     private ImageView img;
-    private CommentsAdapter commentsAdapter;
-
-    private final ActivityResultLauncher<String> pickImage = registerForActivityResult(
-            new ActivityResultContracts.GetContent(),
-            uri -> {
-                if (uri != null){
-                    AppRepository.get().setImage(post.id, uri.toString());
-                    bind();
-                }
-            }
-    );
 
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,36 +32,24 @@ public class PostDetailActivity extends AppCompatActivity {
         TextView tvAuthor = findViewById(R.id.tvAuthor);
         TextView tvTags = findViewById(R.id.tvTags);
         TextView tvContent = findViewById(R.id.tvContent);
+        TextView tvPostTime = findViewById(R.id.tvPostTime);
         img = findViewById(R.id.imgCover);
 
+        btnBack = findViewById(R.id.btnBack);
         btnLike = findViewById(R.id.btnLikeDetail);
         btnBookmark = findViewById(R.id.btnBookmarkDetail);
-        btnPick = findViewById(R.id.btnPickImage);
 
-        RecyclerView rv = findViewById(R.id.recyclerComments);
-        rv.setLayoutManager(new LinearLayoutManager(this));
-        commentsAdapter = new CommentsAdapter();
-        rv.setAdapter(commentsAdapter);
+        // Back button handler
+        btnBack.setOnClickListener(v -> finish());
 
-        EditText et = findViewById(R.id.etComment);
-        ImageButton send = findViewById(R.id.btnSendComment);
-        send.setOnClickListener(v -> {
-            String t = et.getText().toString().trim();
-            if (!t.isEmpty()){
-                AppRepository.get().addComment(post.id, t);
-                et.setText("");
-                bind();
-            }
-        });
-
-        btnPick.setOnClickListener(v -> pickImage.launch("image/*"));
         btnLike.setOnClickListener(v -> { AppRepository.get().toggleLike(post.id); bind(); });
         btnBookmark.setOnClickListener(v -> { AppRepository.get().toggleBookmark(post.id); bind(); });
 
         tvTitle.setText(post.title);
-        tvAuthor.setText("by " + post.author);
+        tvAuthor.setText(post.author);
         tvTags.setText("# " + (post.tags == null ? "" : post.tags));
         tvContent.setText(post.content);
+        tvPostTime.setText("2 hours ago"); // TODO: Calculate actual time difference
 
         bind();
     }
@@ -88,6 +65,5 @@ public class PostDetailActivity extends AppCompatActivity {
         } else {
             img.setImageResource(R.drawable.placeholder);
         }
-        commentsAdapter.submit(post.comments);
     }
 }

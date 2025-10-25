@@ -57,9 +57,9 @@ public class CreateFragment extends Fragment {
     private EditText etTitle, etContent;
     private TextInputLayout tilTitle, tilContent;
     private ChipGroup chipGroup;
-    private ImageView imgPreview;
+    private ImageView imgPreview, iconCamera;
     private Button btnPublish;
-    private ImageButton btnDeleteImage;
+    private ImageButton btnDeleteImage, btnBack;
     private LinearLayout layoutTags;
     private TextView tvSelectedTags;
 
@@ -139,20 +139,29 @@ public class CreateFragment extends Fragment {
         tilContent = v.findViewById(R.id.tilContent);
         chipGroup = v.findViewById(R.id.chipGroup);
         imgPreview = v.findViewById(R.id.imgPreview);
+        iconCamera = v.findViewById(R.id.iconCamera);
         btnPublish = v.findViewById(R.id.btnPublish);
+        btnBack = v.findViewById(R.id.btnBack);
         layoutTags = v.findViewById(R.id.layoutTags);
         tvSelectedTags = v.findViewById(R.id.tvSelectedTags);
 
-        // 新增删除按钮
+        // Back button
+        btnBack.setOnClickListener(v1 -> {
+            if (getActivity() != null) {
+                getActivity().onBackPressed();
+            }
+        });
+
+        // Delete image button
         btnDeleteImage = v.findViewById(R.id.btnDeleteImage);
         btnDeleteImage.setOnClickListener(this::deleteSelectedImage);
 
-        // 为图片预览区域添加点击监听器
+        // Image preview click listener
         imgPreview.setOnClickListener(this::onImagePreviewClick);
 
         btnPublish.setOnClickListener(this::publishPost);
 
-        // 设置清除按钮监听器
+        // Clear button listeners
         tilTitle.setEndIconOnClickListener(view -> {
             etTitle.setText("");
             createVm.setTitle("");
@@ -229,16 +238,18 @@ public class CreateFragment extends Fragment {
     }
 
     /**
-     * 更新图片预览区域的状态
+     * Update image preview area state
      */
     private void updateImagePreviewState() {
         if (selectedImagePath != null && !selectedImagePath.isEmpty()) {
-            // 状态2：显示缩略图和删除按钮
+            // State 2: Show thumbnail and delete button
             btnDeleteImage.setVisibility(View.VISIBLE);
+            iconCamera.setVisibility(View.GONE);
             imgPreview.setBackgroundResource(R.drawable.bg_image_with_delete);
         } else {
-            // 状态1：显示+号
+            // State 1: Show camera icon
             btnDeleteImage.setVisibility(View.GONE);
+            iconCamera.setVisibility(View.VISIBLE);
             imgPreview.setBackgroundResource(R.drawable.bg_add_image);
         }
     }
@@ -296,26 +307,26 @@ public class CreateFragment extends Fragment {
 
     private void showImagePickerDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle("选择图片来源");
-        builder.setItems(new String[]{"相册", "拍照"}, (dialog, which) -> {
+        builder.setTitle("Select Image Source");
+        builder.setItems(new String[]{"Gallery", "Camera"}, (dialog, which) -> {
             if (which == 0) {
-                // 相册选择
+                // Gallery
                 imagePicker.launch("image/*");
             } else {
-                // 拍照 - 先检查权限
+                // Camera - check permission first
                 String cameraPermission = android.Manifest.permission.CAMERA;
                 permissionManager.requestPermission(cameraPermission, new PermissionManager.PermissionCallback() {
                     @Override
                     public void onGranted(String permission) {
-                        // 权限已授权，开始拍照
+                        // Permission granted
                         startCameraCapture();
                     }
 
                     @Override
                     public void onDenied(String permission) {
-                        // 权限被拒绝，显示提示
+                        // Permission denied
                         Toast.makeText(requireContext(),
-                            "需要相机权限才能拍照，请在设置中授予权限",
+                            "Camera permission is required. Please grant it in settings",
                             Toast.LENGTH_LONG).show();
                     }
                 });
@@ -344,7 +355,7 @@ public class CreateFragment extends Fragment {
                 cameraLauncher.launch(cameraImageUri);
             }
         } catch (IOException e) {
-            Toast.makeText(requireContext(), "无法创建图片文件", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Cannot create image file", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -396,34 +407,34 @@ public class CreateFragment extends Fragment {
 
     private void handleSelectedImage(Uri uri) {
         try {
-            // 使用更安全的图片处理方式
+            // Use safer image processing
             Bitmap originalBitmap = decodeSampledBitmapFromUri(uri, 800, 800);
             if (originalBitmap == null) {
-                Toast.makeText(requireContext(), "无法读取图片", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "Cannot read image", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // 压缩图片为200x200正方形
+            // Compress image to 200x200 square
             Bitmap compressedBitmap = Bitmap.createScaledBitmap(originalBitmap, 200, 200, true);
             if (originalBitmap != compressedBitmap) {
-                originalBitmap.recycle(); // 回收原图释放内存
+                originalBitmap.recycle(); // Recycle to free memory
             }
 
-            // 保存到临时文件
+            // Save to temporary file
             File tempFile = saveCompressedImage(compressedBitmap);
             selectedImagePath = tempFile.getAbsolutePath();
 
-            // 更新ViewModel状态，UI会通过观察者自动更新
+            // Update ViewModel state, UI will update automatically via observers
             createVm.setSelectedImagePath(selectedImagePath);
 
-            // 更新图片预览区域状态
+            // Update image preview state
             updateImagePreviewState();
 
             autoSaveDraft();
         } catch (OutOfMemoryError e) {
-            Toast.makeText(requireContext(), "图片过大，请选择较小的图片", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Image is too large, please select a smaller one", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "图片处理失败", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Image processing failed", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -488,8 +499,8 @@ public class CreateFragment extends Fragment {
         String[] words = title.split("\\s+");
         int wordCount = words.length;
 
-        tilTitle.setHelperText(wordCount + "个单词");
-        tilTitle.setError(title.isEmpty() ? "标题不能为空" : null);
+        tilTitle.setHelperText(wordCount + " words");
+        tilTitle.setError(title.isEmpty() ? "Title cannot be empty" : null);
     }
 
     private void updateContentValidation() {
@@ -497,8 +508,8 @@ public class CreateFragment extends Fragment {
         String[] words = content.split("\\s+");
         int wordCount = words.length;
 
-        tilContent.setHelperText(wordCount + "个单词（至少3个）");
-        tilContent.setError(wordCount < 3 ? "内容至少需要3个单词" : null);
+        tilContent.setHelperText(wordCount + " words (at least 3)");
+        tilContent.setError(wordCount < 3 ? "Content must have at least 3 words" : null);
     }
 
     private void updateTagsDisplay() {
@@ -615,11 +626,11 @@ public class CreateFragment extends Fragment {
 
     private void publishPost(View v) {
         if (!isFormValid()) {
-            Toast.makeText(requireContext(), "请完善信息", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Please complete all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 从ViewModel获取最新状态
+        // Get latest state from ViewModel
         String title = createVm.getTitle().getValue() != null ? createVm.getTitle().getValue() : "";
         String content = createVm.getContent().getValue() != null ? createVm.getContent().getValue() : "";
         String tags = String.join(",", createVm.getSelectedTags().getValue() != null ? createVm.getSelectedTags().getValue() : new ArrayList<>());
@@ -627,18 +638,18 @@ public class CreateFragment extends Fragment {
 
         Post post = new Post(UUID.randomUUID().toString(), "You", title, content, tags, imagePath);
 
-        // 添加到Feed并跳转到首页
+        // Add to feed and navigate to home
         feedVm.addPost(post);
 
-        // 清空草稿
+        // Clear draft
         clearDraft();
 
-        // 清空表单
+        // Clear form
         clearForm();
 
-        Toast.makeText(requireContext(), "发布成功！", Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), "Published successfully!", Toast.LENGTH_SHORT).show();
 
-        // 跳转到首页
+        // Navigate to home
         Intent intent = new Intent(requireContext(), MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
