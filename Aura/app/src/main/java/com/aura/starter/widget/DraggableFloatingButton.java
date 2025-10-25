@@ -6,6 +6,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
@@ -29,8 +30,15 @@ public class DraggableFloatingButton extends View {
     private static final float BOTTOM_NAV_HEIGHT = 56f; // dp - bottom navigation bar height
     private static final int SNAP_ANIMATION_DURATION = 300; // ms
 
+    // SharedPreferences keys
+    private static final String PREFS_NAME = "FloatingButtonPrefs";
+    private static final String KEY_POSITION_X = "position_x";
+    private static final String KEY_POSITION_Y = "position_y";
+    private static final String KEY_IS_FIRST_TIME = "is_first_time";
+
     private Paint buttonPaint;
     private Paint ripplePaint;
+    private SharedPreferences prefs;
 
     // Touch tracking
     private float startX;
@@ -73,21 +81,37 @@ public class DraggableFloatingButton extends View {
         wm.getDefaultDisplay().getMetrics(metrics);
         screenWidth = metrics.widthPixels;
         screenHeight = metrics.heightPixels;
+
+        // Initialize SharedPreferences
+        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
 
-        // Set initial position: bottom-right corner
-        if (getTranslationX() == 0 && getTranslationY() == 0) {
-            // X position: right edge with margin
-            float initialX = screenWidth - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
-            setTranslationX(initialX);
+        // Check if this is the first time
+        boolean isFirstTime = prefs.getBoolean(KEY_IS_FIRST_TIME, true);
 
-            // Y position: bottom with margin, accounting for bottom nav (~56dp)
-            float initialY = screenHeight - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE + 56);
+        if (isFirstTime) {
+            // First time - set to bottom-right corner
+            float initialX = screenWidth - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
+            float initialY = screenHeight - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE + BOTTOM_NAV_HEIGHT);
+            setTranslationX(initialX);
             setTranslationY(initialY);
+
+            // Save position and mark as no longer first time
+            savePosition(initialX, initialY);
+            prefs.edit().putBoolean(KEY_IS_FIRST_TIME, false).apply();
+        } else {
+            // Load saved position
+            float savedX = prefs.getFloat(KEY_POSITION_X, -1);
+            float savedY = prefs.getFloat(KEY_POSITION_Y, -1);
+
+            if (savedX != -1 && savedY != -1) {
+                setTranslationX(savedX);
+                setTranslationY(savedY);
+            }
         }
     }
 
@@ -221,6 +245,9 @@ public class DraggableFloatingButton extends View {
             targetX = screenWidth - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
         }
 
+        // Save the new position
+        savePosition(targetX, currentY);
+
         // Animate to target position
         ObjectAnimator animX = ObjectAnimator.ofFloat(this, "translationX", currentX, targetX);
         animX.setDuration(SNAP_ANIMATION_DURATION);
@@ -237,6 +264,16 @@ public class DraggableFloatingButton extends View {
 
         animSet.playTogether(animX, scaleX, scaleY);
         animSet.start();
+    }
+
+    /**
+     * Save button position to SharedPreferences
+     */
+    private void savePosition(float x, float y) {
+        prefs.edit()
+            .putFloat(KEY_POSITION_X, x)
+            .putFloat(KEY_POSITION_Y, y)
+            .apply();
     }
 
     private void handleClick() {

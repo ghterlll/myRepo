@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/gradient_start">
+    android:background="@color/gradient_start"
+    android:fitsSystemWindows="true">
 
     <!-- Top App Bar -->
     <com.google.android.material.appbar.AppBarLayout
@@ -74,55 +75,67 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Image Preview Area with Camera Icon -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Image Preview Area with Camera Icon (3:4 ratio, 80% width) -->
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                android:layout_marginBottom="16dp">
 
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp">
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardImagePreview"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="4dp"
+                    app:layout_constraintWidth_percent="0.8"
+                    app:layout_constraintDimensionRatio="3:4"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
-                    <!-- Image Display Area -->
-                    <ImageView
-                        android:id="@+id/imgPreview"
+                    <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/placeholder"
-                        android:background="@drawable/bg_image_selector"
-                        android:clickable="true"
-                        android:focusable="true" />
+                        android:layout_height="match_parent">
 
-                    <!-- Camera Icon Overlay (Center) -->
-                    <ImageView
-                        android:id="@+id/iconCamera"
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:layout_centerInParent="true"
-                        android:src="@drawable/ic_camera_green"
-                        android:alpha="0.8" />
+                        <!-- Image Display Area -->
+                        <ImageView
+                            android:id="@+id/imgPreview"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/placeholder"
+                            android:background="@drawable/bg_image_selector"
+                            android:clickable="true"
+                            android:focusable="true" />
 
-                    <!-- Delete Button (Top Right Corner) -->
-                    <ImageButton
-                        android:id="@+id/btnDeleteImage"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_alignParentTop="true"
-                        android:layout_margin="8dp"
-                        android:background="@drawable/bg_delete_button"
-                        android:contentDescription="Delete Image"
-                        android:src="@drawable/ic_close"
-                        android:visibility="gone"
-                        app:tint="@android:color/white" />
+                        <!-- Camera Icon Overlay (Center) -->
+                        <ImageView
+                            android:id="@+id/iconCamera"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:layout_centerInParent="true"
+                            android:src="@drawable/ic_camera_green"
+                            android:alpha="0.8" />
 
-                </RelativeLayout>
+                        <!-- Delete Button (Top Right Corner) -->
+                        <ImageButton
+                            android:id="@+id/btnDeleteImage"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_alignParentTop="true"
+                            android:layout_margin="8dp"
+                            android:background="@drawable/bg_delete_button"
+                            android:contentDescription="Delete Image"
+                            android:src="@drawable/ic_close"
+                            android:visibility="gone"
+                            app:tint="@android:color/white" />
 
-            </com.google.android.material.card.MaterialCardView>
+                    </RelativeLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <!-- Title Input -->
             <com.google.android.material.textfield.TextInputLayout

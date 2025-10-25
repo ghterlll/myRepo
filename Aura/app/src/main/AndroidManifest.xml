@@ -35,6 +35,7 @@
         <activity android:name=".history.RunDetailActivity" />
         <activity android:name=".leaderboard.StepsLeaderboardActivity" />
         <activity android:name=".PostDetailActivity" android:exported="false" />
+        <activity android:name=".CommentsActivity" android:exported="false" />
         <activity android:name=".FoodSelectionActivity" android:exported="false" />
         <activity android:name=".WeightTrendActivity" android:exported="false" />
 

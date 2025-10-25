@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#FAFAFA">
+    android:background="#FFFFFF">
 
     <!-- Top Navigation Bar -->
     <com.google.android.material.card.MaterialCardView
@@ -21,7 +21,6 @@
             android:paddingStart="8dp"
             android:paddingEnd="16dp">
 
-            <!-- Back Button -->
             <ImageButton
                 android:id="@+id/btnBack"
                 android:layout_width="48dp"
@@ -44,161 +43,209 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Main Content -->
-    <ScrollView
+    <!-- Area 1: Dynamic Image (scales to fit content) -->
+    <ImageView
+        android:id="@+id/imgCover"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:maxHeight="400dp"
+        android:src="@drawable/placeholder"
+        android:background="#F5F5F5" />
 
+    <!-- Area 2: Title + Content (scrollable, collapsible) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#FFFFFF">
+
+        <!-- Title (1 line fixed) -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Post Title"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="#333333"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!-- Content (min 3 lines, expandable) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_marginTop="8dp">
 
-            <!-- Author Info Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="12dp"
-                    android:gravity="center_vertical">
-
-                    <!-- Author Avatar Placeholder -->
-                    <ImageView
-                        android:id="@+id/imgAuthorAvatar"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/placeholder"
-                        android:background="@drawable/avatar_bg" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:layout_marginStart="12dp">
-
-                        <TextView
-                            android:id="@+id/tvAuthor"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Author Name"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="#333333" />
-
-                        <TextView
-                            android:id="@+id/tvPostTime"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="2 hours ago"
-                            android:textSize="12sp"
-                            android:textColor="#999999"
-                            android:layout_marginTop="2dp" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Cover Image Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
-
-                <ImageView
-                    android:id="@+id/imgCover"
-                    android:layout_width="match_parent"
-                    android:layout_height="280dp"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/placeholder" />
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Action Buttons (Like & Bookmark) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="8dp"
-                android:gravity="start">
-
-                <ImageButton
-                    android:id="@+id/btnLikeDetail"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Like"
-                    android:src="@drawable/ic_heart_outline"
-                    app:tint="#333333" />
-
-                <ImageButton
-                    android:id="@+id/btnBookmarkDetail"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="8dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Bookmark"
-                    android:src="@drawable/ic_bookmark_outline"
-                    app:tint="#333333" />
-
-            </LinearLayout>
-
-            <!-- Title -->
-            <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:text="Post Title"
-                android:textStyle="bold"
-                android:textSize="22sp"
-                android:textColor="#333333" />
-
-            <!-- Tags -->
-            <TextView
-                android:id="@+id/tvTags"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:text="#tag1 #tag2"
-                android:textColor="#4CAF50"
-                android:textSize="14sp" />
-
-            <!-- Content -->
             <TextView
                 android:id="@+id/tvContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="32dp"
                 android:text="Post content goes here..."
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textColor="#555555"
-                android:lineSpacingExtra="4dp" />
+                android:lineSpacingExtra="2dp"
+                android:minLines="3"
+                android:maxLines="3"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/btnExpand"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Expand"
+                android:textColor="#4CAF50"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:visibility="gone"
+                android:clickable="true"
+                android:focusable="true" />
 
         </LinearLayout>
-    </ScrollView>
+
+    </LinearLayout>
+
+    <!-- Area 3: Xiaohongshu-style Interaction Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        android:background="#FAFAFA"
+        android:elevation="4dp">
+
+        <!-- Comment Input Entry (fake input, opens comment page) -->
+        <LinearLayout
+            android:id="@+id/layoutCommentInput"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_comment_input"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Write a comment..."
+                android:textColor="#999999"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+        <!-- Like Button with Count -->
+        <LinearLayout
+            android:id="@+id/layoutLike"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp">
+
+            <ImageButton
+                android:id="@+id/btnLikeDetail"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Like"
+                android:src="@drawable/ic_heart_outline"
+                android:scaleType="fitCenter" />
+
+            <TextView
+                android:id="@+id/tvLikeCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="9999+"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:layout_marginStart="4dp"
+                android:minWidth="40dp" />
+
+        </LinearLayout>
+
+        <!-- Bookmark Button with Count -->
+        <LinearLayout
+            android:id="@+id/layoutBookmark"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp">
+
+            <ImageButton
+                android:id="@+id/btnBookmarkDetail"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Bookmark"
+                android:src="@drawable/ic_bookmark_outline"
+                android:scaleType="fitCenter" />
+
+            <TextView
+                android:id="@+id/tvBookmarkCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="9999+"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:layout_marginStart="4dp"
+                android:minWidth="40dp" />
+
+        </LinearLayout>
+
+        <!-- Comment Button with Count -->
+        <LinearLayout
+            android:id="@+id/layoutComment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_comment"
+                android:scaleType="fitCenter"
+                app:tint="#666666" />
+
+            <TextView
+                android:id="@+id/tvCommentCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="9999+"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:layout_marginStart="4dp"
+                android:minWidth="40dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
 
 </LinearLayout>
