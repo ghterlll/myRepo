@@ -122,13 +122,24 @@
         android:background="#FAFAFA"
         android:elevation="4dp">
 
-        <!-- Comment Input Entry (fake input, opens comment page) -->
+        <!-- Write Comment Button (Pen Icon) -->
+        <ImageButton
+            android:id="@+id/btnWriteComment"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_edit"
+            android:contentDescription="Write comment"
+            android:scaleType="fitCenter"
+            app:tint="#666666" />
+
+        <!-- Blank Box (opens comment dialog) -->
         <LinearLayout
             android:id="@+id/layoutCommentInput"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="36dp"
             android:layout_weight="1"
-            android:orientation="horizontal"
+            android:layout_marginStart="8dp"
             android:background="@drawable/bg_comment_input"
             android:gravity="center_vertical"
             android:paddingStart="12dp"
@@ -137,10 +148,9 @@
             android:focusable="true">
 
             <TextView
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Write a comment..."
+                android:text=""
                 android:textColor="#999999"
                 android:textSize="14sp" />
 

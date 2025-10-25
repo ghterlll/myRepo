@@ -151,3 +151,69 @@ public interface ApiService {
 }
 
 
+    // ==================== posts ====================
+    
+    @POST("api/v1/post")
+    Call<ApiResponse<PostIdResponse>> createPost(@Body PostCreateRequest request);
+    
+    @GET("api/v1/post")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> listPosts(
+            @Query("limit") Integer limit,
+            @Query("cursor") Long cursor
+    );
+    
+    @GET("api/v1/post/{postId}")
+    Call<ApiResponse<PostDetailResponse>> getPostDetail(@Path("postId") Long postId);
+    
+    @PATCH("api/v1/post/{postId}")
+    Call<ApiResponse<Void>> updatePost(@Path("postId") Long postId, @Body PostUpdateRequest request);
+    
+    @DELETE("api/v1/post/{postId}")
+    Call<ApiResponse<Void>> deletePost(@Path("postId") Long postId);
+    
+    // ==================== likes and bookmarks ====================
+    
+    @POST("api/v1/post/{postId}/like")
+    Call<ApiResponse<Void>> likePost(@Path("postId") Long postId);
+    
+    @DELETE("api/v1/post/{postId}/like")
+    Call<ApiResponse<Void>> unlikePost(@Path("postId") Long postId);
+    
+    @POST("api/v1/post/{postId}/bookmark")
+    Call<ApiResponse<Void>> bookmarkPost(@Path("postId") Long postId);
+    
+    @DELETE("api/v1/post/{postId}/bookmark")
+    Call<ApiResponse<Void>> unbookmarkPost(@Path("postId") Long postId);
+    
+    // ==================== comments ====================
+    
+    @POST("api/v1/post/{postId}/comments")
+    Call<ApiResponse<CommentIdResponse>> createComment(@Path("postId") Long postId, @Body CommentCreateRequest request);
+    
+    @GET("api/v1/post/{postId}/comments")
+    Call<ApiResponse<PageResponse<CommentThreadResponse>>> listComments(
+            @Path("postId") Long postId,
+            @Query("limit") Integer limit,
+            @Query("cursor") Long cursor,
+            @Query("previewSize") Integer previewSize
+    );
+    
+    @DELETE("api/v1/post/comments/{commentId}")
+    Call<ApiResponse<Void>> deleteComment(@Path("commentId") Long commentId);
+    
+    // ==================== search ====================
+    
+    @GET("api/v1/tag")
+    Call<ApiResponse<PageResponse<TagResponse>>> searchTags(
+            @Query("q") String query,
+            @Query("limit") Integer limit,
+            @Query("cursor") Long cursor
+    );
+    
+    @GET("api/v1/tag/{tagId}/posts")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> getPostsByTag(
+            @Path("tagId") Long tagId,
+            @Query("limit") Integer limit,
+            @Query("cursor") Long cursor
+    );
+}

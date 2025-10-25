@@ -3,8 +3,11 @@ package com.aura.starter;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -16,15 +19,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.aura.starter.data.AppRepository;
 import com.aura.starter.model.Post;
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButton;
 
 public class PostDetailActivity extends AppCompatActivity {
     private Post post;
-    private ImageButton btnLike, btnBookmark, btnBack;
+    private ImageButton btnLike, btnBookmark, btnBack, btnWriteComment;
     private ImageView img;
     private TextView tvContent, btnExpand;
     private LinearLayout layoutCommentInput, layoutLike, layoutBookmark, layoutComment;
     private TextView tvLikeCount, tvBookmarkCount, tvCommentCount;
     private boolean isContentExpanded = false;
+    private BottomSheetDialog commentDialog;
 
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,6 +47,7 @@ public class PostDetailActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
         btnLike = findViewById(R.id.btnLikeDetail);
         btnBookmark = findViewById(R.id.btnBookmarkDetail);
+        btnWriteComment = findViewById(R.id.btnWriteComment);
 
         // Interaction bar views
         layoutCommentInput = findViewById(R.id.layoutCommentInput);
@@ -59,10 +66,13 @@ public class PostDetailActivity extends AppCompatActivity {
         layoutLike.setOnClickListener(v -> { AppRepository.get().toggleLike(post.id); bind(); });
         layoutBookmark.setOnClickListener(v -> { AppRepository.get().toggleBookmark(post.id); bind(); });
 
-        // Comment input opens comment page
-        layoutCommentInput.setOnClickListener(v -> openCommentsPage());
+        // Write comment button opens bottom sheet
+        btnWriteComment.setOnClickListener(v -> showWriteCommentDialog());
 
-        // Comment count click also opens comment page
+        // Blank box also opens bottom sheet
+        layoutCommentInput.setOnClickListener(v -> showWriteCommentDialog());
+
+        // Comment count click opens comment page
         layoutComment.setOnClickListener(v -> openCommentsPage());
 
         // Expand/collapse content
@@ -92,6 +102,48 @@ public class PostDetailActivity extends AppCompatActivity {
         });
 
         bind();
+    }
+
+    private void showWriteCommentDialog() {
+        commentDialog = new BottomSheetDialog(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_write_comment, null);
+        commentDialog.setContentView(dialogView);
+
+        EditText etComment = dialogView.findViewById(R.id.etComment);
+        MaterialButton btnSend = dialogView.findViewById(R.id.btnSend);
+        ImageButton btnClose = dialogView.findViewById(R.id.btnClose);
+
+        // Enable/disable send button based on input
+        etComment.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                btnSend.setEnabled(s.toString().trim().length() > 0);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        // Send comment
+        btnSend.setOnClickListener(v -> {
+            String content = etComment.getText().toString().trim();
+            if (content.isEmpty()) return;
+
+            // TODO: Send comment to backend
+            Toast.makeText(this, "Comment sent!", Toast.LENGTH_SHORT).show();
+            commentDialog.dismiss();
+
+            // Jump to comments page to show the new comment
+            openCommentsPage();
+        });
+
+        // Close button
+        btnClose.setOnClickListener(v -> commentDialog.dismiss());
+
+        commentDialog.show();
     }
 
     private void openCommentsPage() {

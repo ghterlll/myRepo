@@ -37,18 +37,15 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
     }
 
     @Override public void onBindViewHolder(@NonNull VH h, int i) {
-        com.aura.starter.model.Post p = data.get(i);
+        Post p = data.get(i);
         h.tvTitle.setText(p.title);
         h.tvAuthor.setText(p.author);
 
-        // 处理图片显示
+        // Handle image display
         if (p.imageUri != null && !p.imageUri.isEmpty()){
-            // 如果是图片文件路径，加载图片
             if (p.imageUri.startsWith("/data/") || p.imageUri.contains("cache") || p.imageUri.contains("Pictures")) {
-                // 文件路径
                 Glide.with(h.imgCover.getContext()).load(new File(p.imageUri)).placeholder(R.drawable.placeholder).into(h.imgCover);
             } else if (p.imageUri.startsWith("img") && p.imageUri.length() <= 5) {
-                // Assets图片
                 try {
                     AssetManager assetManager = h.imgCover.getContext().getAssets();
                     InputStream inputStream = assetManager.open("images/" + p.imageUri + ".png");
@@ -61,17 +58,13 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
                         h.imgCover.setImageResource(R.drawable.placeholder);
                     }
                 } catch (IOException e) {
-                    // assets中找不到图片，使用占位符
                     h.imgCover.setImageResource(R.drawable.placeholder);
                 }
             } else {
-                // 其他类型的图片URI（drawable资源ID或网络图片）
                 try {
-                    // 尝试作为资源ID加载
                     int resourceId = Integer.parseInt(p.imageUri);
                     Glide.with(h.imgCover.getContext()).load(resourceId).placeholder(R.drawable.placeholder).into(h.imgCover);
                 } catch (NumberFormatException e) {
-                    // 不是资源ID，作为普通URI加载
                     Glide.with(h.imgCover.getContext()).load(p.imageUri).placeholder(R.drawable.placeholder).into(h.imgCover);
                 }
             }
@@ -80,11 +73,28 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
         }
 
         h.itemView.setOnClickListener(v -> listener.onOpen(p));
+        
+        // Set initial icon state
         h.btnLike.setImageResource(p.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
         h.btnBookmark.setImageResource(p.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
 
-        h.btnLike.setOnClickListener(v -> listener.onLike(p));
-        h.btnBookmark.setOnClickListener(v -> listener.onBookmark(p));
+        // Like button - update immediately on click
+        h.btnLike.setOnClickListener(v -> {
+            // Toggle state immediately for visual feedback
+            p.liked = !p.liked;
+            h.btnLike.setImageResource(p.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+            // Notify listener to update backend
+            listener.onLike(p);
+        });
+
+        // Bookmark button - update immediately on click
+        h.btnBookmark.setOnClickListener(v -> {
+            // Toggle state immediately for visual feedback
+            p.bookmarked = !p.bookmarked;
+            h.btnBookmark.setImageResource(p.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
+            // Notify listener to update backend
+            listener.onBookmark(p);
+        });
     }
 
     @Override public int getItemCount(){ return data.size(); }
