@@ -45,17 +45,18 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPublish"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:text="Publish"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
+                android:textStyle="bold"
                 android:enabled="false"
-                android:backgroundTint="@color/auragreen_primary"
-                app:cornerRadius="18dp"
+                android:background="@drawable/bg_publish_button"
+                android:elevation="4dp"
                 android:layout_gravity="end"
                 android:layout_marginEnd="8dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp" />
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp" />
 
         </androidx.appcompat.widget.Toolbar>
 
@@ -139,8 +140,9 @@
                     android:id="@+id/etTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textMultiLine"
-                    android:maxLines="2" />
+                    android:inputType="textCapSentences"
+                    android:maxLines="3"
+                    android:scrollHorizontally="false" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -186,21 +188,99 @@
                         android:textStyle="bold"
                         android:layout_marginBottom="12dp" />
 
-                    <!-- Horizontal Scrollable ChipGroup -->
-                    <HorizontalScrollView
+                    <!-- First Row: 3 tags -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:scrollbars="none">
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="8dp"
+                        android:weightSum="3">
 
-                        <com.google.android.material.chip.ChipGroup
-                            android:id="@+id/chipGroup"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:selectionRequired="false"
-                            app:singleLine="true"
-                            app:singleSelection="false" />
+                        <TextView
+                            android:id="@+id/tagFitness"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="fitness"
+                            android:gravity="center"
+                            android:textSize="14sp"
+                            android:textColor="@color/tag_text_selector"
+                            android:background="@drawable/bg_tag_selector"
+                            android:clickable="true"
+                            android:focusable="true" />
 
-                    </HorizontalScrollView>
+                        <TextView
+                            android:id="@+id/tagDiet"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="diet"
+                            android:gravity="center"
+                            android:textSize="14sp"
+                            android:textColor="@color/tag_text_selector"
+                            android:background="@drawable/bg_tag_selector"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/tagRecipe"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:text="recipe"
+                            android:gravity="center"
+                            android:textSize="14sp"
+                            android:textColor="@color/tag_text_selector"
+                            android:background="@drawable/bg_tag_selector"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                    </LinearLayout>
+
+                    <!-- Second Row: 2 tags -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="3">
+
+                        <TextView
+                            android:id="@+id/tagPlan"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="plan"
+                            android:gravity="center"
+                            android:textSize="14sp"
+                            android:textColor="@color/tag_text_selector"
+                            android:background="@drawable/bg_tag_selector"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/tagOutcome"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="outcome"
+                            android:gravity="center"
+                            android:textSize="14sp"
+                            android:textColor="@color/tag_text_selector"
+                            android:background="@drawable/bg_tag_selector"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <!-- Empty space to maintain layout -->
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1" />
+
+                    </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/layoutTags"

@@ -56,7 +56,7 @@ public class CreateFragment extends Fragment {
     private CreatePostViewModel createVm;
     private EditText etTitle, etContent;
     private TextInputLayout tilTitle, tilContent;
-    private ChipGroup chipGroup;
+    private TextView tagFitness, tagDiet, tagRecipe, tagPlan, tagOutcome;
     private ImageView imgPreview, iconCamera;
     private Button btnPublish;
     private ImageButton btnDeleteImage, btnBack;
@@ -137,7 +137,14 @@ public class CreateFragment extends Fragment {
         etContent = v.findViewById(R.id.etContent);
         tilTitle = v.findViewById(R.id.tilTitle);
         tilContent = v.findViewById(R.id.tilContent);
-        chipGroup = v.findViewById(R.id.chipGroup);
+
+        // Tag TextViews
+        tagFitness = v.findViewById(R.id.tagFitness);
+        tagDiet = v.findViewById(R.id.tagDiet);
+        tagRecipe = v.findViewById(R.id.tagRecipe);
+        tagPlan = v.findViewById(R.id.tagPlan);
+        tagOutcome = v.findViewById(R.id.tagOutcome);
+
         imgPreview = v.findViewById(R.id.imgPreview);
         iconCamera = v.findViewById(R.id.iconCamera);
         btnPublish = v.findViewById(R.id.btnPublish);
@@ -210,26 +217,29 @@ public class CreateFragment extends Fragment {
     }
 
     private void setupTags() {
-        Log.d(TAG, "setupTags called, predefinedTags: " + predefinedTags);
-        for (String tag : predefinedTags) {
-            Chip chip = new Chip(requireContext());
-            chip.setText(tag);
-            chip.setCheckable(true);
-            chip.setChipBackgroundColorResource(R.color.chip_background_selector);
-            chip.setTextColor(getResources().getColorStateList(R.color.chip_text_selector));
-            chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                Log.d(TAG, "Chip " + tag + " checked: " + isChecked + " (user interaction)");
-                if (isChecked) {
-                    createVm.addTag(tag);
-                } else {
-                    createVm.removeTag(tag);
-                }
-                // 状态已通过ViewModel观察者更新，无需手动更新
-                autoSaveDraft();
-            });
-            chipGroup.addView(chip);
-        }
-        Log.d(TAG, "setupTags completed, chipGroup child count: " + chipGroup.getChildCount());
+        Log.d(TAG, "setupTags called");
+
+        View.OnClickListener tagClickListener = v -> {
+            TextView tag = (TextView) v;
+            boolean isSelected = tag.isSelected();
+            tag.setSelected(!isSelected);
+
+            String tagText = tag.getText().toString();
+            if (!isSelected) {
+                createVm.addTag(tagText);
+            } else {
+                createVm.removeTag(tagText);
+            }
+            autoSaveDraft();
+        };
+
+        tagFitness.setOnClickListener(tagClickListener);
+        tagDiet.setOnClickListener(tagClickListener);
+        tagRecipe.setOnClickListener(tagClickListener);
+        tagPlan.setOnClickListener(tagClickListener);
+        tagOutcome.setOnClickListener(tagClickListener);
+
+        Log.d(TAG, "setupTags completed");
     }
 
     private void setupImagePicker() {
@@ -407,34 +417,25 @@ public class CreateFragment extends Fragment {
 
     private void handleSelectedImage(Uri uri) {
         try {
-            // Use safer image processing
-            Bitmap originalBitmap = decodeSampledBitmapFromUri(uri, 800, 800);
-            if (originalBitmap == null) {
-                Toast.makeText(requireContext(), "Cannot read image", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            // Save URI as string path (let Glide handle the loading and caching)
+            selectedImagePath = uri.toString();
 
-            // Compress image to 200x200 square
-            Bitmap compressedBitmap = Bitmap.createScaledBitmap(originalBitmap, 200, 200, true);
-            if (originalBitmap != compressedBitmap) {
-                originalBitmap.recycle(); // Recycle to free memory
-            }
-
-            // Save to temporary file
-            File tempFile = saveCompressedImage(compressedBitmap);
-            selectedImagePath = tempFile.getAbsolutePath();
-
-            // Update ViewModel state, UI will update automatically via observers
+            // Update ViewModel state
             createVm.setSelectedImagePath(selectedImagePath);
+
+            // Load image with Glide (modern approach - no manual compression)
+            glideRequestManager
+                .load(uri)
+                .centerCrop()
+                .into(imgPreview);
 
             // Update image preview state
             updateImagePreviewState();
 
             autoSaveDraft();
-        } catch (OutOfMemoryError e) {
-            Toast.makeText(requireContext(), "Image is too large, please select a smaller one", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Toast.makeText(requireContext(), "Image processing failed", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Error handling selected image", e);
         }
     }
 
@@ -523,7 +524,6 @@ public class CreateFragment extends Fragment {
     private void updateValidationDisplay() {
         boolean isValid = isFormValid();
         btnPublish.setEnabled(isValid);
-        btnPublish.setAlpha(isValid ? 1.0f : 0.5f);
     }
 
     private boolean isFormValid() {
@@ -599,29 +599,13 @@ public class CreateFragment extends Fragment {
     }
 
     private void updateSelectedTags() {
-        Log.d(TAG, "updateSelectedTags called, chipGroup child count: " + chipGroup.getChildCount() + ", selectedTags: " + selectedTags);
-        if (chipGroup.getChildCount() == 0) {
-            Log.w(TAG, "chipGroup has no children, cannot update chip states");
-            return;
-        }
+        Log.d(TAG, "updateSelectedTags called, selectedTags: " + selectedTags);
 
-        for (int i = 0; i < chipGroup.getChildCount(); i++) {
-            Chip chip = (Chip) chipGroup.getChildAt(i);
-            if (chip == null) {
-                Log.w(TAG, "Chip at index " + i + " is null");
-                continue;
-            }
-
-            String chipText = chip.getText().toString();
-            boolean shouldBeChecked = selectedTags.contains(chipText);
-            boolean currentlyChecked = chip.isChecked();
-            Log.d(TAG, "Chip " + i + " (" + chipText + ") should be checked: " + shouldBeChecked + ", currently checked: " + currentlyChecked);
-
-            if (shouldBeChecked != currentlyChecked) {
-                Log.d(TAG, "Setting chip " + chipText + " checked state to: " + shouldBeChecked);
-                chip.setChecked(shouldBeChecked);
-            }
-        }
+        tagFitness.setSelected(selectedTags.contains("fitness"));
+        tagDiet.setSelected(selectedTags.contains("diet"));
+        tagRecipe.setSelected(selectedTags.contains("recipe"));
+        tagPlan.setSelected(selectedTags.contains("plan"));
+        tagOutcome.setSelected(selectedTags.contains("outcome"));
     }
 
     private void publishPost(View v) {
