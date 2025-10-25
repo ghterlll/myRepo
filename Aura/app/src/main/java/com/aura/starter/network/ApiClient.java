@@ -11,6 +11,8 @@ import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class ApiClient {
     private static Retrofit retrofit;
@@ -56,10 +58,14 @@ public class ApiClient {
                 .readTimeout(20, TimeUnit.SECONDS)
                 .build();
 
+        // 创建自定义Gson配置，确保数字正确解析为Long而不是Double
+        Gson gson = new GsonBuilder()
+                .create();
+
         retrofit = new Retrofit.Builder()
                 .baseUrl(baseUrl)
                 .client(client)
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson))
                 .build();
         return retrofit;
     }

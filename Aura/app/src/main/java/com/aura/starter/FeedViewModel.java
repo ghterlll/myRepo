@@ -3,104 +3,194 @@ package com.aura.starter;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import com.aura.starter.data.AppRepository;
+import com.aura.starter.network.PostRepository;
+import com.aura.starter.network.models.*;
 import com.aura.starter.model.Post;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 public class FeedViewModel extends ViewModel {
-    private final AppRepository repo = AppRepository.get();
-    private int points = 120;
-    private int currentPage = 0;
-    private final int pageSize = 10;
-    private boolean hasMorePages = true;
+    private final PostRepository postRepo = PostRepository.getInstance();
     private final MutableLiveData<List<Post>> displayedPosts = new MutableLiveData<>();
-    private final Random random = new Random();
+    private final MutableLiveData<String> currentCursor = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> hasMorePages = new MutableLiveData<>();
+    private int points = 120;
+    private final int pageSize = 20; // 按照要求设置为20
+    private boolean isRefreshing = false;
 
     public FeedViewModel() {
+        hasMorePages.setValue(true);
+        isLoading.setValue(false);
         loadInitialPosts();
     }
 
     public LiveData<List<Post>> getDisplayedPosts() { return displayedPosts; }
+    public LiveData<Boolean> getIsLoading() { return isLoading; }
+    public LiveData<Boolean> getHasMorePages() { return hasMorePages; }
+    public LiveData<String> getCurrentCursor() { return currentCursor; }
 
     /**
      * 加载初始帖子（第一页）
      */
     public void loadInitialPosts() {
-        currentPage = 0;
-        hasMorePages = true;
-        loadMorePosts();
+        currentCursor.setValue(null); // null表示第一页
+        hasMorePages.setValue(true);
+        isLoading.setValue(true);
+        loadPostsInternal();
     }
 
     /**
      * 加载更多帖子（分页）
      */
     public void loadMorePosts() {
-        if (!hasMorePages) return;
-
-        List<Post> allPosts = repo.posts().getValue();
-        if (allPosts == null || allPosts.isEmpty()) return;
-
-        int startIndex = currentPage * pageSize;
-        int endIndex = Math.min(startIndex + pageSize, allPosts.size());
-
-        if (startIndex >= allPosts.size()) {
-            hasMorePages = false;
+        if (Boolean.TRUE.equals(isLoading.getValue()) || Boolean.FALSE.equals(hasMorePages.getValue())) {
             return;
         }
 
-        List<Post> currentDisplayed = displayedPosts.getValue();
-        if (currentDisplayed == null) {
-            currentDisplayed = new ArrayList<>();
-        }
-
-        // 添加新帖子
-        for (int i = startIndex; i < endIndex; i++) {
-            currentDisplayed.add(allPosts.get(i));
-        }
-
-        displayedPosts.setValue(currentDisplayed);
-        currentPage++;
-
-        // 检查是否还有更多帖子
-        if (endIndex >= allPosts.size()) {
-            hasMorePages = false;
-        }
+        isLoading.setValue(true);
+        loadPostsInternal();
     }
 
     /**
-     * 下拉刷新 - 重新加载随机10个帖子
+     * 下拉刷新 - 重新加载最新帖子
      */
     public void refreshPosts() {
-        List<Post> allPosts = repo.posts().getValue();
-        if (allPosts == null || allPosts.size() < pageSize) {
-            loadInitialPosts();
+        if (Boolean.TRUE.equals(isRefreshing)) {
             return;
         }
 
-        // 随机选择10个帖子
-        List<Post> shuffledPosts = new ArrayList<>(allPosts);
-        java.util.Collections.shuffle(shuffledPosts, random);
+        isRefreshing = true;
+        currentCursor.setValue(null); // 重置游标，获取最新帖子
+        hasMorePages.setValue(true);
+        isLoading.setValue(true);
+        loadPostsInternal();
+    }
 
-        List<Post> refreshedPosts = shuffledPosts.subList(0, Math.min(pageSize, shuffledPosts.size()));
-        displayedPosts.setValue(refreshedPosts);
+    /**
+     * 内部方法：从后端API加载帖子
+     */
+    private void loadPostsInternal() {
+        String cursor = currentCursor.getValue();
+        Integer limit = pageSize;
 
-        currentPage = 1;
-        hasMorePages = shuffledPosts.size() > pageSize;
+        // 使用PostRepository从后端获取数据
+        postRepo.listPosts(limit, cursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
+            @Override
+            public void onSuccess(PageResponse<PostCardResponse> data) {
+                List<Post> currentDisplayed = displayedPosts.getValue();
+                if (currentDisplayed == null) {
+                    currentDisplayed = new ArrayList<>();
+                }
+
+                // 转换后端数据为前端Post模型
+                List<Post> newPosts = convertPostCardResponseToPosts(data.getItems());
+
+                if (cursor == null) {
+                    // 初始加载或刷新：替换所有数据
+                    currentDisplayed.clear();
+                    currentDisplayed.addAll(newPosts);
+                } else {
+                    // 加载更多：追加数据
+                    currentDisplayed.addAll(newPosts);
+                }
+
+                displayedPosts.setValue(currentDisplayed);
+
+                // 更新分页状态
+                String nextCursor = data.getNextCursor();
+                currentCursor.setValue(nextCursor);
+                hasMorePages.setValue(data.getHasMore());
+
+                isLoading.setValue(false);
+                isRefreshing = false;
+            }
+
+            @Override
+            public void onError(String message) {
+                android.util.Log.e("FeedViewModel", "Load posts failed: " + message);
+                isLoading.setValue(false);
+                isRefreshing = false;
+
+                // 错误时显示空列表
+                displayedPosts.setValue(new ArrayList<>());
+                hasMorePages.setValue(false);
+            }
+        });
+    }
+
+    /**
+     * 转换后端PostCardResponse为前端Post模型
+     */
+    private List<Post> convertPostCardResponseToPosts(List<PostCardResponse> responses) {
+        List<Post> posts = new ArrayList<>();
+        for (PostCardResponse response : responses) {
+            Post post = new Post(
+                response.getId().toString(),
+                "User" + response.getAuthorId(), // TODO: 需要从后端获取用户名
+                response.getTitle(),
+                "", // 后端PostCardResp目前没有content字段
+                "fitness,diet", // TODO: 后端需要添加tags字段到PostCardResp
+                response.getCoverUrl()
+            );
+            // 设置创建时间
+            try {
+                post.createdAt = Long.parseLong(response.getCreatedAt());
+            } catch (NumberFormatException e) {
+                post.createdAt = System.currentTimeMillis();
+            }
+            posts.add(post);
+        }
+        return posts;
     }
 
     public boolean hasMorePages() {
-        return hasMorePages;
+        Boolean hasMore = hasMorePages.getValue();
+        return hasMore != null && hasMore;
     }
 
-    // 保留原有方法供其他地方使用
-    public LiveData<List<Post>> getPosts(){ return repo.posts(); }
-    public void addPost(Post p){ repo.addPost(p); }
-    public void toggleLike(String id){ repo.toggleLike(id); }
-    public void toggleBookmark(String id){ repo.toggleBookmark(id); }
-    public void addComment(String id, String c){ repo.addComment(id, c); }
-    public void setImage(String id, String uri){ repo.setImage(id, uri); }
+    // ==================== 社交互动方法 ====================
+
+    public void toggleLike(Long postId) {
+        postRepo.likePost(postId, new PostRepository.ResultCallback<Void>() {
+            @Override
+            public void onSuccess(Void data) {
+                // 更新本地UI状态 - 这里应该刷新对应帖子的状态
+                refreshCurrentPosts();
+            }
+
+            @Override
+            public void onError(String message) {
+                android.util.Log.e("FeedViewModel", "Like post failed: " + message);
+            }
+        });
+    }
+
+    public void toggleBookmark(Long postId) {
+        postRepo.bookmarkPost(postId, new PostRepository.ResultCallback<Void>() {
+            @Override
+            public void onSuccess(Void data) {
+                // 更新本地UI状态
+                refreshCurrentPosts();
+            }
+
+            @Override
+            public void onError(String message) {
+                android.util.Log.e("FeedViewModel", "Bookmark post failed: " + message);
+            }
+        });
+    }
+
+    /**
+     * 刷新当前显示的帖子（用于更新点赞等状态）
+     */
+    private void refreshCurrentPosts() {
+        // 重新加载当前页面以更新状态
+        loadPostsInternal();
+    }
+
+    // ==================== 兼容性方法 ====================
 
     public int getPoints(){ return points; }
     public void addPoints(int delta){ points += delta; }

@@ -63,7 +63,8 @@ public class ProfileFragment extends Fragment {
         header = v.findViewById(R.id.header);
 
         tvPoints.setText(String.valueOf(vm.getPoints()));
-        vm.getPosts().observe(getViewLifecycleOwner(), posts -> {
+        // TODO: Update statistics from backend API
+        vm.getDisplayedPosts().observe(getViewLifecycleOwner(), posts -> {
             int postCount = 0;
             int likes = 0;
             if (posts != null) {

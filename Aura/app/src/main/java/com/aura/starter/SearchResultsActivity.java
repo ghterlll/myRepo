@@ -73,10 +73,20 @@ public class SearchResultsActivity extends AppCompatActivity {
                 startActivity(intent);
             }
             @Override public void onLike(Post post) {
-                viewModel.toggleLike(post.id);
+                try {
+                    Long postId = Long.parseLong(post.id);
+                    viewModel.toggleLike(postId);
+                } catch (NumberFormatException e) {
+                    android.util.Log.e("SearchResultsActivity", "Invalid post ID: " + post.id, e);
+                }
             }
             @Override public void onBookmark(Post post) {
-                viewModel.toggleBookmark(post.id);
+                try {
+                    Long postId = Long.parseLong(post.id);
+                    viewModel.toggleBookmark(postId);
+                } catch (NumberFormatException e) {
+                    android.util.Log.e("SearchResultsActivity", "Invalid post ID: " + post.id, e);
+                }
             }
         });
         recycler.setAdapter(adapter);

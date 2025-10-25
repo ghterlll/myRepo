@@ -32,8 +32,22 @@ public class MyPostsFragment extends Fragment {
         r.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
         adapter = new PostAdapter(new PostAdapter.Listener() {
             @Override public void onOpen(Post p) { Intent it = new Intent(requireContext(), PostDetailActivity.class); it.putExtra("post", p); startActivity(it); }
-            @Override public void onLike(Post p) { vm.toggleLike(p.id); }
-            @Override public void onBookmark(Post p) { vm.toggleBookmark(p.id); }
+            @Override public void onLike(Post p) {
+                try {
+                    Long postId = Long.parseLong(p.id);
+                    vm.toggleLike(postId);
+                } catch (NumberFormatException e) {
+                    android.util.Log.e("MyPostsFragment", "Invalid post ID: " + p.id, e);
+                }
+            }
+            @Override public void onBookmark(Post p) {
+                try {
+                    Long postId = Long.parseLong(p.id);
+                    vm.toggleBookmark(postId);
+                } catch (NumberFormatException e) {
+                    android.util.Log.e("MyPostsFragment", "Invalid post ID: " + p.id, e);
+                }
+            }
         });
         r.setAdapter(adapter);
 
@@ -42,7 +56,9 @@ public class MyPostsFragment extends Fragment {
         sortTime.setOnClickListener(btn -> sortByTime());
         sortLikes.setOnClickListener(btn -> sortByLikes());
 
-        vm.getPosts().observe(getViewLifecycleOwner(), all -> {
+        // For now, observe all posts and filter for current user
+        // TODO: Add backend API to get posts by user ID
+        vm.getDisplayedPosts().observe(getViewLifecycleOwner(), all -> {
             List<Post> list = new ArrayList<>();
             if (all != null) for (Post p : all) if ("You".equals(p.author)) list.add(p);
             current = list;

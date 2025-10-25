@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.aura.starter.data.AppRepository;
 import com.aura.starter.model.Post;
@@ -63,8 +64,28 @@ public class PostDetailActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
 
         // Like and bookmark handlers
-        layoutLike.setOnClickListener(v -> { AppRepository.get().toggleLike(post.id); bind(); });
-        layoutBookmark.setOnClickListener(v -> { AppRepository.get().toggleBookmark(post.id); bind(); });
+        layoutLike.setOnClickListener(v -> {
+            try {
+                Long postId = Long.parseLong(post.id);
+                FeedViewModel feedVm = new androidx.lifecycle.ViewModelProvider(this).get(FeedViewModel.class);
+                feedVm.toggleLike(postId);
+                // Refresh the current post data
+                bind();
+            } catch (NumberFormatException e) {
+                android.util.Log.e("PostDetailActivity", "Invalid post ID: " + post.id, e);
+            }
+        });
+        layoutBookmark.setOnClickListener(v -> {
+            try {
+                Long postId = Long.parseLong(post.id);
+                FeedViewModel feedVm = new androidx.lifecycle.ViewModelProvider(this).get(FeedViewModel.class);
+                feedVm.toggleBookmark(postId);
+                // Refresh the current post data
+                bind();
+            } catch (NumberFormatException e) {
+                android.util.Log.e("PostDetailActivity", "Invalid post ID: " + post.id, e);
+            }
+        });
 
         // Write comment button opens bottom sheet
         btnWriteComment.setOnClickListener(v -> showWriteCommentDialog());
@@ -153,15 +174,12 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     private void bind(){
-        for (Post p : AppRepository.get().posts().getValue()){
-            if (p.id.equals(post.id)){ post = p; break; }
-        }
-
         // Update like/bookmark icons
         btnLike.setImageResource(post.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
         btnBookmark.setImageResource(post.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
 
         // Update counts (using placeholder 9999+ for now)
+        // TODO: Get real counts from backend API
         tvLikeCount.setText("9999+");
         tvBookmarkCount.setText("9999+");
         tvCommentCount.setText("9999+");

@@ -73,8 +73,22 @@ public class BookmarksFragment extends Fragment {
         recycler.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
         adapter = new PostAdapter(new PostAdapter.Listener() {
             @Override public void onOpen(Post p) { Intent it = new Intent(requireContext(), PostDetailActivity.class); it.putExtra("post", p); startActivity(it); }
-            @Override public void onLike(Post p) { vm.toggleLike(p.id); }
-            @Override public void onBookmark(Post p) { vm.toggleBookmark(p.id); }
+            @Override public void onLike(Post p) {
+                try {
+                    Long postId = Long.parseLong(p.id);
+                    vm.toggleLike(postId);
+                } catch (NumberFormatException e) {
+                    android.util.Log.e("BookmarksFragment", "Invalid post ID: " + p.id, e);
+                }
+            }
+            @Override public void onBookmark(Post p) {
+                try {
+                    Long postId = Long.parseLong(p.id);
+                    vm.toggleBookmark(postId);
+                } catch (NumberFormatException e) {
+                    android.util.Log.e("BookmarksFragment", "Invalid post ID: " + p.id, e);
+                }
+            }
         });
         recycler.setAdapter(adapter);
     }

@@ -31,6 +31,8 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import com.aura.starter.model.Post;
+import com.aura.starter.network.PostRepository;
+import com.aura.starter.network.models.PostCreateRequest;
 import com.aura.starter.util.PermissionManager;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
@@ -44,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -620,24 +623,37 @@ public class CreateFragment extends Fragment {
         String tags = String.join(",", createVm.getSelectedTags().getValue() != null ? createVm.getSelectedTags().getValue() : new ArrayList<>());
         String imagePath = createVm.getSelectedImagePath().getValue();
 
-        Post post = new Post(UUID.randomUUID().toString(), "You", title, content, tags, imagePath);
+        // Create post via backend API
+        PostCreateRequest createRequest = new PostCreateRequest(title, content, true, new ArrayList<>(createVm.getSelectedTags().getValue()), null);
 
-        // Add to feed and navigate to home
-        feedVm.addPost(post);
+        // TODO: Add image upload logic here if imagePath is not null
 
-        // Clear draft
-        clearDraft();
+        // For now, create post without image (backend will handle image upload separately)
+        PostRepository.getInstance().createPost(createRequest, new PostRepository.ResultCallback<Map<String, Long>>() {
+            @Override
+            public void onSuccess(Map<String, Long> result) {
+                requireActivity().runOnUiThread(() -> {
+                    // Clear draft and form
+                    clearDraft();
+                    clearForm();
 
-        // Clear form
-        clearForm();
+                    Toast.makeText(requireContext(), "Published successfully!", Toast.LENGTH_SHORT).show();
 
-        Toast.makeText(requireContext(), "Published successfully!", Toast.LENGTH_SHORT).show();
+                    // Navigate back to home
+                    Intent intent = new Intent(requireContext(), MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                    requireActivity().finish();
+                });
+            }
 
-        // Navigate to home
-        Intent intent = new Intent(requireContext(), MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-        requireActivity().finish();
+            @Override
+            public void onError(String message) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Failed to publish: " + message, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void clearDraft() {
