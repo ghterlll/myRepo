@@ -60,6 +60,7 @@
                 android:textSize="14sp"
                 android:textColor="#999999" />
         </LinearLayout>
+
     </LinearLayout>
 
     <!-- SwipeRefreshLayout for pull-to-refresh -->

@@ -126,6 +126,9 @@ public class FeedViewModel extends ViewModel {
     private List<Post> convertPostCardResponseToPosts(List<PostCardResponse> responses) {
         List<Post> posts = new ArrayList<>();
         for (PostCardResponse response : responses) {
+            android.util.Log.d("FeedViewModel", "Converting post - ID: " + response.getId() + 
+                ", Title: " + response.getTitle() + ", CoverUrl: " + response.getCoverUrl());
+            
             Post post = new Post(
                 response.getId().toString(),
                 "User" + response.getAuthorId(), // TODO: 需要从后端获取用户名
@@ -142,6 +145,7 @@ public class FeedViewModel extends ViewModel {
             }
             posts.add(post);
         }
+        android.util.Log.d("FeedViewModel", "Converted " + posts.size() + " posts");
         return posts;
     }
 

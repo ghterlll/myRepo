@@ -40,20 +40,42 @@ public class GlideUtils {
      * Handles URLs, file paths, assets, and resource IDs
      */
     public static void loadImage(Context context, String imageUri, ImageView imageView) {
+        android.util.Log.d("GlideUtils", "Loading image: " + imageUri);
+        
         if (imageUri == null || imageUri.isEmpty()) {
+            android.util.Log.d("GlideUtils", "Image URI is null or empty, using placeholder");
             imageView.setImageResource(R.drawable.placeholder);
             return;
         }
 
         // Priority 1: HTTP/HTTPS URLs (MinIO, web sources)
         if (imageUri.startsWith("http://") || imageUri.startsWith("https://")) {
+            android.util.Log.d("GlideUtils", "Loading HTTP/HTTPS URL: " + imageUri);
             Glide.with(context)
                 .load(imageUri)
                 .apply(getDefaultOptions())
+                .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
+                    @Override
+                    public boolean onLoadFailed(com.bumptech.glide.load.engine.GlideException e, Object model, 
+                                              com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, 
+                                              boolean isFirstResource) {
+                        android.util.Log.e("GlideUtils", "Failed to load image: " + imageUri, e);
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(android.graphics.drawable.Drawable resource, Object model, 
+                                                 com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, 
+                                                 com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
+                        android.util.Log.d("GlideUtils", "Successfully loaded image: " + imageUri);
+                        return false;
+                    }
+                })
                 .into(imageView);
         }
         // Priority 2: Local file paths
         else if (imageUri.startsWith("/") || imageUri.startsWith("file://")) {
+            android.util.Log.d("GlideUtils", "Loading local file: " + imageUri);
             Glide.with(context)
                 .load(new File(imageUri.replace("file://", "")))
                 .apply(getDefaultOptions())
@@ -61,18 +83,21 @@ public class GlideUtils {
         }
         // Priority 3: Assets images (imgX format)
         else if (imageUri.startsWith("img") && imageUri.length() <= 5) {
+            android.util.Log.d("GlideUtils", "Loading asset image: " + imageUri);
             loadAssetImage(context, imageUri, imageView);
         }
         // Priority 4: Resource IDs (numeric strings)
         else {
             try {
                 int resourceId = Integer.parseInt(imageUri);
+                android.util.Log.d("GlideUtils", "Loading resource ID: " + resourceId);
                 Glide.with(context)
                     .load(resourceId)
                     .apply(getDefaultOptions())
                     .into(imageView);
             } catch (NumberFormatException e) {
                 // Fallback: try as URL
+                android.util.Log.d("GlideUtils", "Fallback: trying as URL: " + imageUri);
                 Glide.with(context)
                     .load(imageUri)
                     .apply(getDefaultOptions())

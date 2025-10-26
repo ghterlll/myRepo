@@ -108,6 +108,14 @@ public class PostServiceMPImpl implements PostService {
         PostStatistics stats = PostStatistics.createForPost(p.getId());
         statisticsMapper.insert(stats);
 
+        // Handle media items if provided
+        AtomicInteger sortOrder = new AtomicInteger(0);
+        Optional.ofNullable(req.getMedias())
+                .filter(medias -> !medias.isEmpty())
+                .ifPresent(medias -> medias.stream()
+                        .map(media -> PostMedia.createFrom(p.getId(), media, sortOrder.getAndIncrement()))
+                        .forEach(mediaMapper::insert));
+
         // Handle tags if provided
         Optional.ofNullable(req.getTags())
                 .filter(tags -> !tags.isEmpty())

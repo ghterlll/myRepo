@@ -27,8 +27,19 @@ public class FileUpload {
     private FileUpload(Long userId, String originalFilename, String contentType, long fileSize) {
         this.userId = userId;
         this.originalFilename = originalFilename;
-        this.contentType = contentType;
+        // Normalize image/jpg to image/jpeg for consistency
+        this.contentType = normalizeContentType(contentType);
         this.fileSize = fileSize;
+    }
+
+    /**
+     * Normalize content type to standard MIME types
+     */
+    private static String normalizeContentType(String contentType) {
+        if ("image/jpg".equalsIgnoreCase(contentType)) {
+            return "image/jpeg";
+        }
+        return contentType;
     }
 
     /**

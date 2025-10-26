@@ -75,7 +75,7 @@ public class Post {
                 .title(req.getTitle().trim())
                 .caption(req.getCaption())
                 .visibility(Boolean.TRUE.equals(req.getPublish()) ? PostVisibility.PUBLIC : PostVisibility.DRAFT)
-                .status("0")
+                .status(Boolean.TRUE.equals(req.getPublish()) ? "published" : "draft")
                 .mediaCount(req.getMedias() == null ? 0 : req.getMedias().size())
                 .category(req.getCategory() != null ? req.getCategory() : "health")  // Use provided or default
                 .geoLat(req.getGeoLat() != null ? req.getGeoLat() : -37.81361100)   // Use provided or default Melbourne

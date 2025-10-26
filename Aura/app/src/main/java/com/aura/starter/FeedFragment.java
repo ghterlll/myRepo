@@ -234,6 +234,7 @@ public class FeedFragment extends Fragment {
         etSearch.setCursorVisible(false);
     }
 
+
     @Override
     public void onDestroy() {
         super.onDestroy();

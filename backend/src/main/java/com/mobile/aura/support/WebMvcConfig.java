@@ -19,6 +19,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/v1/user/register/**",      // Registration sub-paths
                         "/api/v1/user/auth/**",          // Auth endpoints (login, refresh)
                         "/api/v1/user/login",            // Login alias
+                        "/test/**",                      // Test endpoints (development only)
                         "/swagger-ui/**",                // Swagger UI resources
                         "/swagger-ui.html",              // Swagger UI page
                         "/v3/api-docs/**",               // OpenAPI documentation

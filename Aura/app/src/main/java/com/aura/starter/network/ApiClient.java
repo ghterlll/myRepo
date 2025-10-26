@@ -22,14 +22,14 @@ public class ApiClient {
 
     // Option 1: Physical device with USB + adb reverse (Recommended)
     // Run: adb reverse tcp:8080 tcp:8080
-    private static String baseUrl = "http://localhost:8080/";
+    // private static String baseUrl = "http://localhost:8080/";
 
     // Option 2: Android Studio Emulator
     // private static String baseUrl = "http://10.0.2.2:8080/";
 
     // Option 3: Physical device via WiFi (same network)
     // Replace with your computer's IP address (run 'ipconfig' to find it)
-    // private static String baseUrl = "http://192.168.1.XXX:8080/";
+    private static String baseUrl = "http://192.168.5.22:8080/";
 
     private static volatile String accessToken = null;
 
