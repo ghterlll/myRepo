@@ -28,6 +28,25 @@ public class UserSocialStats {
     private LocalDateTime updatedAt;
 
     /**
+     * Create initial social stats for new user registration.
+     * All counts are initialized to 0.
+     *
+     * @param userId user ID
+     * @return new social stats instance
+     */
+    public static UserSocialStats createForUser(Long userId) {
+        UserSocialStats stats = new UserSocialStats();
+        stats.setUserId(userId);
+        stats.setFollowCount(0);
+        stats.setFansCount(0);
+        stats.setPostCount(0);
+        LocalDateTime now = LocalDateTime.now();
+        stats.setCreatedAt(now);
+        stats.setUpdatedAt(now);
+        return stats;
+    }
+
+    /**
      * Ensure statistics update succeeded.
      *
      * @param updatedCount the number of rows updated

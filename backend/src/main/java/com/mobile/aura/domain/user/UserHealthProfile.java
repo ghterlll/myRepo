@@ -73,6 +73,22 @@ public class UserHealthProfile {
     }
 
     /**
+     * Create empty health profile for new user registration.
+     * All fields are null except userId and timestamps.
+     *
+     * @param userId user ID
+     * @return new empty health profile instance
+     */
+    public static UserHealthProfile createForUser(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+        return UserHealthProfile.builder()
+                .userId(userId)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+    }
+
+    /**
      * Apply health profile updates from request DTO.
      * Handles all health-related fields including weight, height, and goals.
      * Note: activityLvl is NOT updated here - it's automatically calculated based on user behavior.
