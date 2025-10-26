@@ -41,31 +41,58 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
         h.tvTitle.setText(p.title);
         h.tvAuthor.setText(p.author);
 
-        // Handle image display
+        // Handle image display - Simplified logic with proper URL support
         if (p.imageUri != null && !p.imageUri.isEmpty()){
-            if (p.imageUri.startsWith("/data/") || p.imageUri.contains("cache") || p.imageUri.contains("Pictures")) {
-                Glide.with(h.imgCover.getContext()).load(new File(p.imageUri)).placeholder(R.drawable.placeholder).into(h.imgCover);
-            } else if (p.imageUri.startsWith("img") && p.imageUri.length() <= 5) {
+            // Priority 1: HTTP/HTTPS URLs (from MinIO or other web sources)
+            if (p.imageUri.startsWith("http://") || p.imageUri.startsWith("https://")) {
+                Glide.with(h.imgCover.getContext())
+                    .load(p.imageUri)
+                    .placeholder(R.drawable.placeholder)
+                    .error(R.drawable.placeholder)
+                    .into(h.imgCover);
+            }
+            // Priority 2: Local file paths
+            else if (p.imageUri.startsWith("/") || p.imageUri.startsWith("file://")) {
+                Glide.with(h.imgCover.getContext())
+                    .load(new File(p.imageUri.replace("file://", "")))
+                    .placeholder(R.drawable.placeholder)
+                    .error(R.drawable.placeholder)
+                    .into(h.imgCover);
+            }
+            // Priority 3: Assets images (imgX format)
+            else if (p.imageUri.startsWith("img") && p.imageUri.length() <= 5) {
                 try {
                     AssetManager assetManager = h.imgCover.getContext().getAssets();
                     InputStream inputStream = assetManager.open("images/" + p.imageUri + ".png");
                     Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
                     inputStream.close();
-
                     if (bitmap != null) {
-                        Glide.with(h.imgCover.getContext()).load(bitmap).placeholder(R.drawable.placeholder).into(h.imgCover);
+                        Glide.with(h.imgCover.getContext())
+                            .load(bitmap)
+                            .placeholder(R.drawable.placeholder)
+                            .into(h.imgCover);
                     } else {
                         h.imgCover.setImageResource(R.drawable.placeholder);
                     }
                 } catch (IOException e) {
                     h.imgCover.setImageResource(R.drawable.placeholder);
                 }
-            } else {
+            }
+            // Priority 4: Resource IDs (numeric strings)
+            else {
                 try {
                     int resourceId = Integer.parseInt(p.imageUri);
-                    Glide.with(h.imgCover.getContext()).load(resourceId).placeholder(R.drawable.placeholder).into(h.imgCover);
+                    Glide.with(h.imgCover.getContext())
+                        .load(resourceId)
+                        .placeholder(R.drawable.placeholder)
+                        .into(h.imgCover);
                 } catch (NumberFormatException e) {
-                    Glide.with(h.imgCover.getContext()).load(p.imageUri).placeholder(R.drawable.placeholder).into(h.imgCover);
+                    // Fallback: try as URL one more time
+                    Glide.with(h.imgCover.getContext())
+                        .load(p.imageUri)
+                        .placeholder(R.drawable.placeholder)
+                        .error(R.drawable.placeholder)
+                        .into(h.imgCover);
                 }
             }
         } else {

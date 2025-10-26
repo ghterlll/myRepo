@@ -218,10 +218,12 @@ public class PostDetailActivity extends AppCompatActivity {
         tvBookmarkCount.setText("9999+");
         tvCommentCount.setText("9999+");
 
-        // Load image
+        // Load image - Direct URL loading for better compatibility
         if (post.imageUri != null && !post.imageUri.isEmpty()){
-            Glide.with(this).load(Uri.parse(post.imageUri))
+            Glide.with(this)
+                .load(post.imageUri)  // Load URL directly, Glide handles HTTP URLs properly
                 .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
                 .fitCenter()
                 .into(img);
         } else {
