@@ -280,7 +280,105 @@ public class PostRepository {
         });
     }
 
+    public void checkLikeStatus(Long postId, ResultCallback<Boolean> callback) {
+        apiService.checkLikeStatus(postId).enqueue(new Callback<ApiResponse<Map<String, Boolean>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Map<String, Boolean>>> call, Response<ApiResponse<Map<String, Boolean>>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    Boolean isLiked = response.body().getData().get("isLiked");
+                    callback.onSuccess(isLiked != null && isLiked);
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Map<String, Boolean>>> call, Throwable t) {
+                Log.e(TAG, "Check like status failed", t);
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    public void checkBookmarkStatus(Long postId, ResultCallback<Boolean> callback) {
+        apiService.checkBookmarkStatus(postId).enqueue(new Callback<ApiResponse<Map<String, Boolean>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Map<String, Boolean>>> call, Response<ApiResponse<Map<String, Boolean>>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    Boolean isBookmarked = response.body().getData().get("isBookmarked");
+                    callback.onSuccess(isBookmarked != null && isBookmarked);
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Map<String, Boolean>>> call, Throwable t) {
+                Log.e(TAG, "Check bookmark status failed", t);
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
     // ==================== Comments ====================
+
+    public void likeComment(Long commentId, ResultCallback<Void> callback) {
+        apiService.likeComment(commentId).enqueue(new Callback<ApiResponse<Void>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Void>> call, Response<ApiResponse<Void>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Void>> call, Throwable t) {
+                Log.e(TAG, "Like comment failed", t);
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    public void unlikeComment(Long commentId, ResultCallback<Void> callback) {
+        apiService.unlikeComment(commentId).enqueue(new Callback<ApiResponse<Void>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Void>> call, Response<ApiResponse<Void>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Void>> call, Throwable t) {
+                Log.e(TAG, "Unlike comment failed", t);
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    public void checkCommentLikeStatus(Long commentId, ResultCallback<Boolean> callback) {
+        apiService.checkCommentLikeStatus(commentId).enqueue(new Callback<ApiResponse<Map<String, Boolean>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Map<String, Boolean>>> call, Response<ApiResponse<Map<String, Boolean>>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    Boolean isLiked = response.body().getData().get("isLiked");
+                    callback.onSuccess(isLiked != null && isLiked);
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Map<String, Boolean>>> call, Throwable t) {
+                Log.e(TAG, "Check comment like status failed", t);
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
 
     public void createComment(Long postId, CommentCreateRequest request, ResultCallback<Map<String, Long>> callback) {
         apiService.createComment(postId, request).enqueue(new Callback<ApiResponse<Map<String, Long>>>() {
@@ -355,6 +453,44 @@ public class PostRepository {
             @Override
             public void onFailure(Call<ApiResponse<PageResponse<PostCardResponse>>> call, Throwable t) {
                 Log.e(TAG, "Search posts failed", t);
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    public void listMyPosts(Integer limit, String cursor, ResultCallback<PageResponse<PostCardResponse>> callback) {
+        apiService.listMyPosts(limit, cursor).enqueue(new Callback<ApiResponse<PageResponse<PostCardResponse>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<PageResponse<PostCardResponse>>> call, Response<ApiResponse<PageResponse<PostCardResponse>>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    callback.onSuccess(response.body().getData());
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<PageResponse<PostCardResponse>>> call, Throwable t) {
+                Log.e(TAG, "List my posts failed", t);
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    public void listBookmarkedPosts(Integer limit, String cursor, ResultCallback<PageResponse<PostCardResponse>> callback) {
+        apiService.listBookmarkedPosts(limit, cursor).enqueue(new Callback<ApiResponse<PageResponse<PostCardResponse>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<PageResponse<PostCardResponse>>> call, Response<ApiResponse<PageResponse<PostCardResponse>>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    callback.onSuccess(response.body().getData());
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<PageResponse<PostCardResponse>>> call, Throwable t) {
+                Log.e(TAG, "List bookmarked posts failed", t);
                 callback.onError("Network error: " + t.getMessage());
             }
         });

@@ -15,20 +15,31 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import com.aura.starter.model.Post;
 import com.aura.starter.network.AuthManager;
+import com.aura.starter.network.PostRepository;
+import com.aura.starter.network.models.PageResponse;
+import com.aura.starter.network.models.PostCardResponse;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import android.os.Handler;
+import android.os.Looper;
 
 public class MyPostsFragment extends Fragment {
     private FeedViewModel vm;
+    private PostRepository postRepo;
     private List<Post> current = new ArrayList<>();
     private PostAdapter adapter;
     private Long currentUserId;
+    private String currentCursor = null;
+    private boolean hasMorePages = true;
+    private boolean isLoading = false;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle s){
         View v = inf.inflate(R.layout.fragment_list_posts, c, false);
         vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
+        postRepo = PostRepository.getInstance();
 
         // Get current user ID from AuthManager
         AuthManager authManager = new AuthManager(requireContext());
@@ -62,27 +73,69 @@ public class MyPostsFragment extends Fragment {
         sortTime.setOnClickListener(btn -> sortByTime());
         sortLikes.setOnClickListener(btn -> sortByLikes());
 
-        // Filter posts by current user's authorId
-        vm.getDisplayedPosts().observe(getViewLifecycleOwner(), all -> {
-            List<Post> list = new ArrayList<>();
-            if (all != null && currentUserId != null) {
-                for (Post p : all) {
-                    // Parse author from "UserXXX" format and compare with currentUserId
-                    String authorIdStr = p.author.replace("User", "");
-                    try {
-                        Long authorId = Long.parseLong(authorIdStr);
-                        if (authorId.equals(currentUserId)) {
-                            list.add(p);
-                        }
-                    } catch (NumberFormatException e) {
-                        // Skip posts with invalid author format
-                    }
-                }
-            }
-            current = list;
-            sortByTime();
-        });
+        // Load my posts from backend API
+        loadMyPosts();
         return v;
+    }
+
+    private void loadMyPosts() {
+        if (isLoading) return;
+        
+        isLoading = true;
+        postRepo.listMyPosts(20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
+            @Override
+            public void onSuccess(PageResponse<PostCardResponse> response) {
+                mainHandler.post(() -> {
+                    List<Post> newPosts = convertPostCardResponseToPosts(response.getItems());
+                    
+                    if (currentCursor == null) {
+                        // Initial load
+                        current.clear();
+                        current.addAll(newPosts);
+                    } else {
+                        // Load more
+                        current.addAll(newPosts);
+                    }
+                    
+                    currentCursor = response.getNextCursor();
+                    hasMorePages = response.getHasMore();
+                    isLoading = false;
+                    
+                    sortByTime();
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                mainHandler.post(() -> {
+                    android.util.Log.e("MyPostsFragment", "Load my posts failed: " + message);
+                    isLoading = false;
+                });
+            }
+        });
+    }
+
+    private List<Post> convertPostCardResponseToPosts(List<PostCardResponse> responses) {
+        List<Post> posts = new ArrayList<>();
+        for (PostCardResponse response : responses) {
+            Post post = new Post(
+                response.getId().toString(),
+                "User" + response.getAuthorId(),
+                response.getTitle(),
+                "",
+                "fitness,diet",
+                response.getCoverUrl()
+            );
+            post.authorNickname = response.getAuthorNickname();
+            
+            try {
+                post.createdAt = Long.parseLong(response.getCreatedAt());
+            } catch (NumberFormatException e) {
+                post.createdAt = System.currentTimeMillis();
+            }
+            posts.add(post);
+        }
+        return posts;
     }
 
     private void sortByTime(){

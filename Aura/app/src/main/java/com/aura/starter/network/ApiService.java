@@ -197,11 +197,17 @@ public interface ApiService {
     @DELETE("api/v1/post/{postId}/like")
     Call<ApiResponse<Void>> unlikePost(@Path("postId") Long postId);
 
+    @GET("api/v1/post/{postId}/like/status")
+    Call<ApiResponse<Map<String, Boolean>>> checkLikeStatus(@Path("postId") Long postId);
+
     @POST("api/v1/post/{postId}/bookmark")
     Call<ApiResponse<Void>> bookmarkPost(@Path("postId") Long postId);
 
     @DELETE("api/v1/post/{postId}/bookmark")
     Call<ApiResponse<Void>> unbookmarkPost(@Path("postId") Long postId);
+
+    @GET("api/v1/post/{postId}/bookmark/status")
+    Call<ApiResponse<Map<String, Boolean>>> checkBookmarkStatus(@Path("postId") Long postId);
 
     // ==================== comments ====================
 
@@ -215,6 +221,15 @@ public interface ApiService {
             @Query("cursor") String cursor,
             @Query("previewSize") Integer previewSize
     );
+
+    @POST("api/v1/post/comments/{commentId}/like")
+    Call<ApiResponse<Void>> likeComment(@Path("commentId") Long commentId);
+
+    @DELETE("api/v1/post/comments/{commentId}/like")
+    Call<ApiResponse<Void>> unlikeComment(@Path("commentId") Long commentId);
+
+    @GET("api/v1/post/comments/{commentId}/like/status")
+    Call<ApiResponse<Map<String, Boolean>>> checkCommentLikeStatus(@Path("commentId") Long commentId);
 
     @DELETE("api/v1/post/comments/{commentId}")
     Call<ApiResponse<Void>> deleteComment(@Path("commentId") Long commentId);
@@ -232,6 +247,18 @@ public interface ApiService {
     Call<ApiResponse<PageResponse<PostCardResponse>>> searchPosts(
             @Query("keyword") String keyword,
             @Query("category") String category,
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
+
+    @GET("api/v1/post/me")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> listMyPosts(
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
+
+    @GET("api/v1/post/bookmarks")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> listBookmarkedPosts(
             @Query("limit") Integer limit,
             @Query("cursor") String cursor
     );

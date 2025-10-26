@@ -17,6 +17,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.aura.starter.model.Post;
+import com.aura.starter.network.PostRepository;
+import com.aura.starter.network.models.PageResponse;
+import com.aura.starter.network.models.PostCardResponse;
 import com.aura.starter.util.PostInteractionManager;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,11 +31,14 @@ import java.util.concurrent.Executors;
 
 public class BookmarksFragment extends Fragment {
     private FeedViewModel vm;
+    private PostRepository postRepo;
     private List<Post> current = new ArrayList<>();
     private PostAdapter adapter;
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView recycler;
     private boolean isLoading = false;
+    private String currentCursor = null;
+    private boolean hasMorePages = true;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private PostInteractionManager interactionManager;
@@ -40,6 +46,7 @@ public class BookmarksFragment extends Fragment {
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle s){
         View v = inf.inflate(R.layout.fragment_list_posts, c, false);
         vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
+        postRepo = PostRepository.getInstance();
 
         // Initialize interaction manager
         interactionManager = PostInteractionManager.getInstance(requireContext());
@@ -59,27 +66,74 @@ public class BookmarksFragment extends Fragment {
         // Setup sorting buttons
         setupSortingButtons(v);
 
-        // Observe displayed posts and filter bookmarks using local state
-        vm.getDisplayedPosts().observe(getViewLifecycleOwner(), all -> {
-            List<Post> list = new ArrayList<>();
-            if (all != null) {
-                // Get bookmarked post IDs from local storage
-                Set<String> bookmarkedIds = interactionManager.getAllBookmarkedIds();
-
-                // Filter posts that are bookmarked
-                for (Post p : all) {
-                    if (bookmarkedIds.contains(p.id)) {
-                        // Update post's bookmarked state
-                        p.bookmarked = true;
-                        list.add(p);
-                    }
-                }
-            }
-            current = list;
-            sortByTime();
-        });
+        // Load bookmarked posts from backend API
+        loadBookmarkedPosts();
 
         return v;
+    }
+
+    private void loadBookmarkedPosts() {
+        if (isLoading) return;
+        
+        isLoading = true;
+        postRepo.listBookmarkedPosts(20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
+            @Override
+            public void onSuccess(PageResponse<PostCardResponse> response) {
+                mainHandler.post(() -> {
+                    List<Post> newPosts = convertPostCardResponseToPosts(response.getItems());
+                    
+                    if (currentCursor == null) {
+                        // Initial load
+                        current.clear();
+                        current.addAll(newPosts);
+                    } else {
+                        // Load more
+                        current.addAll(newPosts);
+                    }
+                    
+                    currentCursor = response.getNextCursor();
+                    hasMorePages = response.getHasMore();
+                    isLoading = false;
+                    
+                    sortByTime();
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                mainHandler.post(() -> {
+                    android.util.Log.e("BookmarksFragment", "Load bookmarks failed: " + message);
+                    isLoading = false;
+                    if (swipeRefreshLayout != null) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                });
+            }
+        });
+    }
+
+    private List<Post> convertPostCardResponseToPosts(List<PostCardResponse> responses) {
+        List<Post> posts = new ArrayList<>();
+        for (PostCardResponse response : responses) {
+            Post post = new Post(
+                response.getId().toString(),
+                "User" + response.getAuthorId(),
+                response.getTitle(),
+                "",
+                "fitness,diet",
+                response.getCoverUrl()
+            );
+            post.authorNickname = response.getAuthorNickname();
+            post.bookmarked = true; // All posts from bookmarks API are bookmarked
+            
+            try {
+                post.createdAt = Long.parseLong(response.getCreatedAt());
+            } catch (NumberFormatException e) {
+                post.createdAt = System.currentTimeMillis();
+            }
+            posts.add(post);
+        }
+        return posts;
     }
 
     private void setupViews(View v) {
@@ -114,14 +168,10 @@ public class BookmarksFragment extends Fragment {
     private void setupSwipeRefresh(View v) {
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setOnRefreshListener(() -> {
-                // Refresh bookmarks - reload data
-                vm.refreshPosts();
-                // Stop refresh animation after a short delay
-                mainHandler.postDelayed(() -> {
-                    if (swipeRefreshLayout != null) {
-                        swipeRefreshLayout.setRefreshing(false);
-                    }
-                }, 1000);
+                // Refresh bookmarks - reload from backend
+                currentCursor = null;
+                hasMorePages = true;
+                loadBookmarkedPosts();
             });
 
             // Set refresh colors

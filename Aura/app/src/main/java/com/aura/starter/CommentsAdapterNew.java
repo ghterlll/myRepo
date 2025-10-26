@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.aura.starter.model.Comment;
+import com.aura.starter.network.PostRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ public class CommentsAdapterNew extends RecyclerView.Adapter<CommentsAdapterNew.
 
     private final Listener listener;
     private final List<Comment> data = new ArrayList<>();
+    private final PostRepository postRepo = PostRepository.getInstance();
 
     public CommentsAdapterNew(Listener listener) {
         this.listener = listener;
@@ -48,7 +50,57 @@ public class CommentsAdapterNew extends RecyclerView.Adapter<CommentsAdapterNew.
         h.tvLikeCount.setText(String.valueOf(comment.likeCount));
         h.btnLike.setImageResource(comment.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
 
-        h.layoutLike.setOnClickListener(v -> listener.onLikeComment(comment));
+        h.layoutLike.setOnClickListener(v -> {
+            // Toggle local state immediately for visual feedback
+            comment.liked = !comment.liked;
+            comment.likeCount += comment.liked ? 1 : -1;
+            h.btnLike.setImageResource(comment.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+            h.tvLikeCount.setText(String.valueOf(comment.likeCount));
+            
+            // Sync with backend
+            try {
+                Long commentId = Long.parseLong(comment.id);
+                if (comment.liked) {
+                    postRepo.likeComment(commentId, new PostRepository.ResultCallback<Void>() {
+                        @Override
+                        public void onSuccess(Void data) {
+                            // Success - state already updated
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            // Revert local state on error
+                            comment.liked = !comment.liked;
+                            comment.likeCount += comment.liked ? 1 : -1;
+                            h.btnLike.setImageResource(comment.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+                            h.tvLikeCount.setText(String.valueOf(comment.likeCount));
+                        }
+                    });
+                } else {
+                    postRepo.unlikeComment(commentId, new PostRepository.ResultCallback<Void>() {
+                        @Override
+                        public void onSuccess(Void data) {
+                            // Success - state already updated
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            // Revert local state on error
+                            comment.liked = !comment.liked;
+                            comment.likeCount += comment.liked ? 1 : -1;
+                            h.btnLike.setImageResource(comment.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+                            h.tvLikeCount.setText(String.valueOf(comment.likeCount));
+                        }
+                    });
+                }
+            } catch (NumberFormatException e) {
+                // Revert on invalid ID
+                comment.liked = !comment.liked;
+                comment.likeCount += comment.liked ? 1 : -1;
+                h.btnLike.setImageResource(comment.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+                h.tvLikeCount.setText(String.valueOf(comment.likeCount));
+            }
+        });
     }
 
     @Override

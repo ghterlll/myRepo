@@ -2,6 +2,7 @@ package com.aura.starter.util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import com.aura.starter.network.PostRepository;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,11 +19,13 @@ public class PostInteractionManager {
     private static final String KEY_BOOKMARKED_POSTS = "bookmarked_posts";
 
     private final SharedPreferences prefs;
+    private final PostRepository postRepo;
     private static PostInteractionManager instance;
 
     private PostInteractionManager(Context context) {
         this.prefs = context.getApplicationContext()
             .getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        this.postRepo = PostRepository.getInstance();
     }
 
     public static synchronized PostInteractionManager getInstance(Context context) {
@@ -82,9 +85,63 @@ public class PostInteractionManager {
     }
 
     /**
+     * Sync interaction status from backend for a specific post
+     */
+    public void syncInteractionStatus(String postId, InteractionSyncCallback callback) {
+        try {
+            Long postIdLong = Long.parseLong(postId);
+            
+            // Check like status
+            postRepo.checkLikeStatus(postIdLong, new PostRepository.ResultCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean isLiked) {
+                    setLiked(postId, isLiked);
+                    
+                    // Check bookmark status
+                    postRepo.checkBookmarkStatus(postIdLong, new PostRepository.ResultCallback<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean isBookmarked) {
+                            setBookmarked(postId, isBookmarked);
+                            if (callback != null) {
+                                callback.onSyncComplete(isLiked, isBookmarked);
+                            }
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            if (callback != null) {
+                                callback.onSyncError(message);
+                            }
+                        }
+                    });
+                }
+
+                @Override
+                public void onError(String message) {
+                    if (callback != null) {
+                        callback.onSyncError(message);
+                    }
+                }
+            });
+        } catch (NumberFormatException e) {
+            if (callback != null) {
+                callback.onSyncError("Invalid post ID: " + postId);
+            }
+        }
+    }
+
+    /**
      * Clear all interaction state (useful for logout)
      */
     public void clearAll() {
         prefs.edit().clear().apply();
+    }
+
+    /**
+     * Callback interface for interaction status sync
+     */
+    public interface InteractionSyncCallback {
+        void onSyncComplete(boolean isLiked, boolean isBookmarked);
+        void onSyncError(String message);
     }
 }

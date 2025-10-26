@@ -26,6 +26,7 @@ import com.aura.starter.model.UserProfile;
 import com.aura.starter.network.AuthManager;
 import com.aura.starter.network.UserRepository;
 import com.aura.starter.network.models.UserStatisticsResponse;
+import com.aura.starter.network.models.UserProfileResponse;
 import com.bumptech.glide.Glide;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -55,9 +56,10 @@ public class ProfileFragment extends Fragment {
 
         TextView tvName = v.findViewById(R.id.tvName);
         TextView tvBio = v.findViewById(R.id.tvBio);
+        TextView tvDays = v.findViewById(R.id.tvStatDays);
+        TextView tvMeals = v.findViewById(R.id.tvStatMeals);
+        TextView tvHealthy = v.findViewById(R.id.tvStatHealthy);
         TextView tvPosts = v.findViewById(R.id.tvStatPosts);
-        TextView tvLikes = v.findViewById(R.id.tvStatLikes);
-        TextView tvPoints = v.findViewById(R.id.tvStatPoints);
         ImageView btnEdit = v.findViewById(R.id.btnEdit);
         ImageView btnIG = v.findViewById(R.id.btnIG);
         ImageView btnXHS = v.findViewById(R.id.btnXHS);
@@ -65,27 +67,13 @@ public class ProfileFragment extends Fragment {
         imgCover = v.findViewById(R.id.imgCover);
         header = v.findViewById(R.id.header);
 
-        tvPoints.setText(String.valueOf(vm.getPoints()));
-
         // Load statistics from backend API
-        loadStatisticsFromBackend(tvPosts, tvLikes);
+        loadStatisticsFromBackend(tvDays, tvMeals, tvHealthy, tvPosts);
 
-        // Also update from local displayed posts (fallback)
-        vm.getDisplayedPosts().observe(getViewLifecycleOwner(), posts -> {
-            // Only update if backend hasn't loaded yet
-            if (tvPosts.getText().toString().equals("0")) {
-                int postCount = 0;
-                int likes = 0;
-                if (posts != null) {
-                    postCount = posts.size();
-                    for (Post p : posts) likes += p.likes;
-                }
-                tvPosts.setText(String.valueOf(postCount));
-                tvLikes.setText(String.valueOf(likes));
-            }
-        });
-
-        // Observe profile
+        // Load profile from backend API first, then observe local changes
+        loadProfileFromBackend(tvName, tvBio);
+        
+        // Observe profile for local changes
         profileRepo.profile().observe(getViewLifecycleOwner(), p -> bindProfile(p, tvName, tvBio));
 
         // Edit dialog
@@ -195,22 +183,26 @@ public class ProfileFragment extends Fragment {
     }
     
     /**
-     * Load user statistics from backend API
+     * Load user profile from backend API
      */
-    private void loadStatisticsFromBackend(TextView tvPosts, TextView tvLikes) {
-        userRepo.getMyStatistics(new UserRepository.ResultCallback<UserStatisticsResponse>() {
+    private void loadProfileFromBackend(TextView tvName, TextView tvBio) {
+        userRepo.getMyProfile(new UserRepository.ResultCallback<UserProfileResponse>() {
             @Override
-            public void onSuccess(UserStatisticsResponse stats) {
+            public void onSuccess(UserProfileResponse profile) {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
-                        // For now, use mealCount for posts and healthyDays for likes
-                        // TODO: Backend should add post_count and like_count fields
-                        if (stats.getMealCount() != null) {
-                            tvPosts.setText(String.valueOf(stats.getMealCount()));
+                        // Update local repository with backend data
+                        if (profile.getNickname() != null) {
+                            profileRepo.setName(profile.getNickname());
                         }
-                        if (stats.getHealthyDays() != null) {
-                            tvLikes.setText(String.valueOf(stats.getHealthyDays()));
+                        if (profile.getBio() != null) {
+                            profileRepo.setBio(profile.getBio());
                         }
+                        if (profile.getAvatarUrl() != null) {
+                            profileRepo.setAvatar(profile.getAvatarUrl());
+                        }
+                        
+                        // UI will be updated through observer
                     });
                 }
             }
@@ -218,6 +210,40 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onError(String message) {
                 // Silently fail and use local data
+                android.util.Log.e("ProfileFragment", "Failed to load profile: " + message);
+            }
+        });
+    }
+
+    /**
+     * Load user statistics from backend API
+     */
+    private void loadStatisticsFromBackend(TextView tvDays, TextView tvMeals, TextView tvHealthy, TextView tvPosts) {
+        userRepo.getMyStatistics(new UserRepository.ResultCallback<UserStatisticsResponse>() {
+            @Override
+            public void onSuccess(UserStatisticsResponse stats) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // Update all four statistics
+                        if (stats.getJoinedDays() != null) {
+                            tvDays.setText(String.valueOf(stats.getJoinedDays()));
+                        }
+                        if (stats.getMealCount() != null) {
+                            tvMeals.setText(String.valueOf(stats.getMealCount()));
+                        }
+                        if (stats.getHealthyDays() != null) {
+                            tvHealthy.setText(String.valueOf(stats.getHealthyDays()));
+                        }
+                        if (stats.getPostCount() != null) {
+                            tvPosts.setText(String.valueOf(stats.getPostCount()));
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                // Silently fail and keep default values
                 android.util.Log.e("ProfileFragment", "Failed to load statistics: " + message);
             }
         });

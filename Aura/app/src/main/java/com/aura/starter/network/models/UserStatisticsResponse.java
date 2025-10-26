@@ -4,13 +4,15 @@ public class UserStatisticsResponse {
     private Long joinedDays;
     private Long mealCount;
     private Long healthyDays;
+    private Long postCount;
 
     public UserStatisticsResponse() {}
 
-    public UserStatisticsResponse(Long joinedDays, Long mealCount, Long healthyDays) {
+    public UserStatisticsResponse(Long joinedDays, Long mealCount, Long healthyDays, Long postCount) {
         this.joinedDays = joinedDays;
         this.mealCount = mealCount;
         this.healthyDays = healthyDays;
+        this.postCount = postCount;
     }
 
     public Long getJoinedDays() {
@@ -35,5 +37,13 @@ public class UserStatisticsResponse {
 
     public void setHealthyDays(Long healthyDays) {
         this.healthyDays = healthyDays;
+    }
+
+    public Long getPostCount() {
+        return postCount;
+    }
+
+    public void setPostCount(Long postCount) {
+        this.postCount = postCount;
     }
 }
