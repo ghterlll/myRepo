@@ -1,5 +1,6 @@
 package com.mobile.aura.domain.exercise;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mobile.aura.constant.CommonStatusEnum;
@@ -31,7 +32,7 @@ import java.util.*;
 @AllArgsConstructor
 @TableName("exercise_log")
 public class ExerciseLog {
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
     private Long userId;
     private LocalDate exerciseDate;

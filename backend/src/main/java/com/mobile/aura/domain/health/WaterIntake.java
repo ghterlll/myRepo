@@ -1,5 +1,6 @@
 package com.mobile.aura.domain.health;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mobile.aura.constant.CommonStatusEnum;
@@ -26,7 +27,7 @@ public class WaterIntake {
     private static final int MAX_AMOUNT_ML = 100_000;
     private static final int MIN_AMOUNT_ML = 0;
 
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
     private Long userId;
     private LocalDate intakeDate;

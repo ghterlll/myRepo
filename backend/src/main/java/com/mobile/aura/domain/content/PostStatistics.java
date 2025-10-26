@@ -1,5 +1,6 @@
 package com.mobile.aura.domain.content;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mobile.aura.constant.CommonStatusEnum;
@@ -24,7 +25,7 @@ import java.util.Optional;
 @TableName("post_statistics")
 public class PostStatistics {
 
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long postId;
     private Integer likeCount;
     private Integer commentCount;

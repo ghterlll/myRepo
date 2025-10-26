@@ -15,7 +15,7 @@ public class FileUpload {
     private static final long MAX_AVATAR_SIZE = 5 * 1024 * 1024;      // 5MB
     private static final long MAX_IMAGE_SIZE = 100 * 1024 * 1024;     // 100MB
 
-    private static final String[] ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"};
+    private static final String[] ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"};
 
     private final Long userId;
     private final String originalFilename;

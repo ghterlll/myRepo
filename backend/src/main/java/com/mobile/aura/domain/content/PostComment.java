@@ -1,5 +1,6 @@
 package com.mobile.aura.domain.content;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mobile.aura.constant.CommonStatusEnum;
@@ -32,7 +33,7 @@ public class PostComment {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
     private Long postId;
     private Long authorId;
