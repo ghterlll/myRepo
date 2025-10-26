@@ -17,7 +17,6 @@ import com.aura.starter.model.Post;
 import com.aura.starter.network.PostRepository;
 import com.aura.starter.network.models.PageResponse;
 import com.aura.starter.network.models.PostCardResponse;
-import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -31,7 +30,7 @@ public class SearchResultsActivity extends AppCompatActivity {
 
     private FeedViewModel viewModel;
     private PostRepository postRepo = PostRepository.getInstance();
-    private TextInputEditText etSearch;
+    private TextView etSearch;
     private RecyclerView recycler;
     private PostAdapter adapter;
     private TextView tvNoResults;
