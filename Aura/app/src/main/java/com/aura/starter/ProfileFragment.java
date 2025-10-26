@@ -24,12 +24,15 @@ import com.aura.starter.data.ProfileRepository;
 import com.aura.starter.model.Post;
 import com.aura.starter.model.UserProfile;
 import com.aura.starter.network.AuthManager;
+import com.aura.starter.network.UserRepository;
+import com.aura.starter.network.models.UserStatisticsResponse;
 import com.bumptech.glide.Glide;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class ProfileFragment extends Fragment {
     private ProfileRepository profileRepo;
+    private UserRepository userRepo = UserRepository.getInstance();
     private ImageView imgAvatar, imgCover;
     private View header;
 
@@ -63,16 +66,23 @@ public class ProfileFragment extends Fragment {
         header = v.findViewById(R.id.header);
 
         tvPoints.setText(String.valueOf(vm.getPoints()));
-        // TODO: Update statistics from backend API
+
+        // Load statistics from backend API
+        loadStatisticsFromBackend(tvPosts, tvLikes);
+
+        // Also update from local displayed posts (fallback)
         vm.getDisplayedPosts().observe(getViewLifecycleOwner(), posts -> {
-            int postCount = 0;
-            int likes = 0;
-            if (posts != null) {
-                postCount = posts.size();
-                for (Post p : posts) likes += p.likes;
+            // Only update if backend hasn't loaded yet
+            if (tvPosts.getText().toString().equals("0")) {
+                int postCount = 0;
+                int likes = 0;
+                if (posts != null) {
+                    postCount = posts.size();
+                    for (Post p : posts) likes += p.likes;
+                }
+                tvPosts.setText(String.valueOf(postCount));
+                tvLikes.setText(String.valueOf(likes));
             }
-            tvPosts.setText(String.valueOf(postCount));
-            tvLikes.setText(String.valueOf(likes));
         });
 
         // Observe profile
@@ -184,16 +194,45 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
     
+    /**
+     * Load user statistics from backend API
+     */
+    private void loadStatisticsFromBackend(TextView tvPosts, TextView tvLikes) {
+        userRepo.getMyStatistics(new UserRepository.ResultCallback<UserStatisticsResponse>() {
+            @Override
+            public void onSuccess(UserStatisticsResponse stats) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // For now, use mealCount for posts and healthyDays for likes
+                        // TODO: Backend should add post_count and like_count fields
+                        if (stats.getMealCount() != null) {
+                            tvPosts.setText(String.valueOf(stats.getMealCount()));
+                        }
+                        if (stats.getHealthyDays() != null) {
+                            tvLikes.setText(String.valueOf(stats.getHealthyDays()));
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                // Silently fail and use local data
+                android.util.Log.e("ProfileFragment", "Failed to load statistics: " + message);
+            }
+        });
+    }
+
     private void logout() {
         AuthManager authManager = new AuthManager(requireContext());
         authManager.logout();
-        
+
         // Redirect to login
         Intent intent = new Intent(requireActivity(), LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         requireActivity().finish();
-        
+
         Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show();
     }
 }

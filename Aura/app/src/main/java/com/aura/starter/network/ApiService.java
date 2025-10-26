@@ -28,12 +28,15 @@ public interface ApiService {
     Call<ApiResponse<TokenResponse>> refreshToken(@Body RefreshTokenRequest request);
     
     // ==================== user info ====================
-    
+
     @GET("api/v1/user/me")
     Call<ApiResponse<UserProfileResponse>> getMyProfile();
-    
+
     @PATCH("api/v1/user/me/profile")
     Call<ApiResponse<Void>> updateMyProfile(@Body UserProfileUpdateRequest request);
+
+    @GET("api/v1/user/me/statistics")
+    Call<ApiResponse<UserStatisticsResponse>> getMyStatistics();
     
     // ==================== intake record ====================
     
@@ -224,6 +227,14 @@ public interface ApiService {
     );
 
     // ==================== search ====================
+
+    @GET("api/v1/post/search")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> searchPosts(
+            @Query("keyword") String keyword,
+            @Query("category") String category,
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
 
     @GET("api/v1/tag")
     Call<ApiResponse<PageResponse<TagResponse>>> searchTags(

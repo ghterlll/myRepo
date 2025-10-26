@@ -341,6 +341,25 @@ public class PostRepository {
 
     // ==================== Search ====================
 
+    public void searchPosts(String keyword, String category, Integer limit, String cursor, ResultCallback<PageResponse<PostCardResponse>> callback) {
+        apiService.searchPosts(keyword, category, limit, cursor).enqueue(new Callback<ApiResponse<PageResponse<PostCardResponse>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<PageResponse<PostCardResponse>>> call, Response<ApiResponse<PageResponse<PostCardResponse>>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    callback.onSuccess(response.body().getData());
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<PageResponse<PostCardResponse>>> call, Throwable t) {
+                Log.e(TAG, "Search posts failed", t);
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
     public void searchTags(String query, Integer limit, String cursor, ResultCallback<PageResponse<TagResponse>> callback) {
         apiService.searchTags(query, limit, cursor).enqueue(new Callback<ApiResponse<PageResponse<TagResponse>>>() {
             @Override

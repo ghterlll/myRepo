@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -19,11 +20,16 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.aura.starter.data.AppRepository;
 import com.aura.starter.model.Post;
+import com.aura.starter.network.PostRepository;
+import com.aura.starter.network.models.CommentCreateRequest;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 
+import java.util.Map;
+
 public class PostDetailActivity extends AppCompatActivity {
+    private static final String TAG = "PostDetailActivity";
     private Post post;
     private ImageButton btnLike, btnBookmark, btnBack, btnWriteComment;
     private ImageView img;
@@ -32,6 +38,7 @@ public class PostDetailActivity extends AppCompatActivity {
     private TextView tvLikeCount, tvBookmarkCount, tvCommentCount;
     private boolean isContentExpanded = false;
     private BottomSheetDialog commentDialog;
+    private PostRepository postRepo = PostRepository.getInstance();
 
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -153,12 +160,41 @@ public class PostDetailActivity extends AppCompatActivity {
             String content = etComment.getText().toString().trim();
             if (content.isEmpty()) return;
 
-            // TODO: Send comment to backend
-            Toast.makeText(this, "Comment sent!", Toast.LENGTH_SHORT).show();
-            commentDialog.dismiss();
+            // Disable send button
+            btnSend.setEnabled(false);
 
-            // Jump to comments page to show the new comment
-            openCommentsPage();
+            // Send comment to backend
+            try {
+                Long postIdLong = Long.parseLong(post.id);
+                CommentCreateRequest request = new CommentCreateRequest();
+                request.setContent(content);
+                request.setParentId(null); // Root comment
+
+                postRepo.createComment(postIdLong, request, new PostRepository.ResultCallback<Map<String, Long>>() {
+                    @Override
+                    public void onSuccess(Map<String, Long> result) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(PostDetailActivity.this, "Comment sent!", Toast.LENGTH_SHORT).show();
+                            commentDialog.dismiss();
+
+                            // Jump to comments page to show the new comment
+                            openCommentsPage();
+                        });
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(PostDetailActivity.this, "Failed to send comment: " + message, Toast.LENGTH_SHORT).show();
+                            btnSend.setEnabled(true);
+                        });
+                    }
+                });
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid post ID: " + post.id, e);
+                Toast.makeText(this, "Invalid post ID", Toast.LENGTH_SHORT).show();
+                btnSend.setEnabled(true);
+            }
         });
 
         // Close button

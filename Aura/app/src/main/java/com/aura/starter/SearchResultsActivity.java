@@ -14,6 +14,9 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import com.aura.starter.model.Post;
+import com.aura.starter.network.PostRepository;
+import com.aura.starter.network.models.PageResponse;
+import com.aura.starter.network.models.PostCardResponse;
 import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +30,15 @@ import java.util.concurrent.Executors;
 public class SearchResultsActivity extends AppCompatActivity {
 
     private FeedViewModel viewModel;
+    private PostRepository postRepo = PostRepository.getInstance();
     private TextInputEditText etSearch;
     private RecyclerView recycler;
     private PostAdapter adapter;
     private TextView tvNoResults;
 
     private String searchQuery;
+    private String currentCursor = null;
+    private boolean hasMorePages = true;
     private boolean isLoading = false;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -114,7 +120,7 @@ public class SearchResultsActivity extends AppCompatActivity {
                 int totalItemCount = layoutManager.getItemCount();
 
                 // Load more when user scrolls to near the end (only if we have more pages)
-                if (lastVisibleItemPosition >= totalItemCount - 3 && viewModel.hasMorePages()) {
+                if (lastVisibleItemPosition >= totalItemCount - 3 && hasMorePages) {
                     loadMorePosts();
                 }
             }
@@ -132,22 +138,47 @@ public class SearchResultsActivity extends AppCompatActivity {
     }
 
     private void loadMorePosts() {
-        if (isLoading || !viewModel.hasMorePages()) return;
+        if (isLoading || !hasMorePages) return;
 
         isLoading = true;
 
-        // Simulate loading delay
-        executor.execute(() -> {
-            try {
-                Thread.sleep(500); // Simulate network delay
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+        // Load next page from backend
+        postRepo.searchPosts(searchQuery, null, 20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
+            @Override
+            public void onSuccess(PageResponse<PostCardResponse> response) {
+                runOnUiThread(() -> {
+                    List<Post> currentPosts = adapter.getData();
+                    if (currentPosts == null) currentPosts = new ArrayList<>();
+
+                    // Convert and append new posts
+                    for (PostCardResponse postCard : response.getItems()) {
+                        Post post = new Post(
+                            postCard.getId().toString(),
+                            "User" + postCard.getAuthorId(),
+                            postCard.getTitle(),
+                            "",
+                            "",
+                            postCard.getCoverUrl()
+                        );
+                        currentPosts.add(post);
+                    }
+
+                    // Update pagination state
+                    currentCursor = response.getNextCursor();
+                    hasMorePages = response.getHasMore();
+                    isLoading = false;
+
+                    adapter.submit(currentPosts);
+                });
             }
 
-            mainHandler.post(() -> {
-                viewModel.loadMorePosts();
-                isLoading = false;
-            });
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> {
+                    android.util.Log.e("SearchResultsActivity", "Load more failed: " + message);
+                    isLoading = false;
+                });
+            }
         });
     }
 
@@ -193,23 +224,47 @@ public class SearchResultsActivity extends AppCompatActivity {
     }
 
     private void performInitialSearch() {
-        viewModel = new ViewModelProvider(this).get(FeedViewModel.class);
+        isLoading = true;
+        currentCursor = null;
+        hasMorePages = true;
 
-        // Observe displayed posts and filter based on search query
-        viewModel.getDisplayedPosts().observe(this, posts -> {
-            if (posts == null) return;
+        // Search posts using backend API
+        postRepo.searchPosts(searchQuery, null, 20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
+            @Override
+            public void onSuccess(PageResponse<PostCardResponse> response) {
+                runOnUiThread(() -> {
+                    List<Post> searchResults = new ArrayList<>();
 
-            List<Post> filteredPosts = new ArrayList<>();
-            String lowerQuery = searchQuery.toLowerCase();
+                    // Convert PostCardResponse to Post model
+                    for (PostCardResponse postCard : response.getItems()) {
+                        Post post = new Post(
+                            postCard.getId().toString(),
+                            "User" + postCard.getAuthorId(), // TODO: Get actual username
+                            postCard.getTitle(),
+                            "", // PostCardResp doesn't have content
+                            "", // TODO: Get tags from backend
+                            postCard.getCoverUrl()
+                        );
+                        searchResults.add(post);
+                    }
 
-            for (Post post : posts) {
-                String searchText = (post.title + " " + post.content + " " + post.tags).toLowerCase();
-                if (searchText.contains(lowerQuery)) {
-                    filteredPosts.add(post);
-                }
+                    // Update pagination state
+                    currentCursor = response.getNextCursor();
+                    hasMorePages = response.getHasMore();
+                    isLoading = false;
+
+                    updateResults(searchResults);
+                });
             }
 
-            updateResults(filteredPosts);
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> {
+                    android.util.Log.e("SearchResultsActivity", "Search failed: " + message);
+                    isLoading = false;
+                    updateResults(new ArrayList<>());
+                });
+            }
         });
     }
 

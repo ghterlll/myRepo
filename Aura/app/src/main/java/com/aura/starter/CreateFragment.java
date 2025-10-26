@@ -31,7 +31,10 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import com.aura.starter.model.Post;
+import com.aura.starter.network.FileRepository;
 import com.aura.starter.network.PostRepository;
+import com.aura.starter.network.models.FileUploadResponse;
+import com.aura.starter.network.models.MediaItem;
 import com.aura.starter.network.models.PostCreateRequest;
 import com.aura.starter.util.PermissionManager;
 import com.bumptech.glide.Glide;
@@ -620,15 +623,125 @@ public class CreateFragment extends Fragment {
         // Get latest state from ViewModel
         String title = createVm.getTitle().getValue() != null ? createVm.getTitle().getValue() : "";
         String content = createVm.getContent().getValue() != null ? createVm.getContent().getValue() : "";
-        String tags = String.join(",", createVm.getSelectedTags().getValue() != null ? createVm.getSelectedTags().getValue() : new ArrayList<>());
         String imagePath = createVm.getSelectedImagePath().getValue();
 
-        // Create post via backend API
-        PostCreateRequest createRequest = new PostCreateRequest(title, content, true, new ArrayList<>(createVm.getSelectedTags().getValue()), null);
+        // Disable publish button to prevent double submission
+        btnPublish.setEnabled(false);
+        btnPublish.setText("Publishing...");
 
-        // TODO: Add image upload logic here if imagePath is not null
+        // Step 1: Upload image first (if exists)
+        if (imagePath != null && !imagePath.isEmpty()) {
+            uploadImageThenCreatePost(title, content, imagePath);
+        } else {
+            // No image, create post directly
+            createPostWithMedia(title, content, null);
+        }
+    }
 
-        // For now, create post without image (backend will handle image upload separately)
+    /**
+     * Upload image first, then create post with image URL
+     */
+    private void uploadImageThenCreatePost(String title, String content, String imagePath) {
+        FileRepository fileRepo = FileRepository.getInstance();
+
+        // Convert image path to File
+        File imageFile = null;
+        try {
+            if (imagePath.startsWith("content://") || imagePath.startsWith("file://")) {
+                // URI path - need to convert to file
+                Uri uri = Uri.parse(imagePath);
+                imageFile = uriToFile(uri);
+            } else {
+                // File path
+                imageFile = new File(imagePath);
+            }
+
+            if (imageFile == null || !imageFile.exists()) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Image file not found", Toast.LENGTH_SHORT).show();
+                    resetPublishButton();
+                });
+                return;
+            }
+
+            final File finalImageFile = imageFile;
+            fileRepo.uploadPostImage(finalImageFile, new FileRepository.ResultCallback<FileUploadResponse>() {
+                @Override
+                public void onSuccess(FileUploadResponse response) {
+                    // Image uploaded successfully, now create post with image URL
+                    String imageUrl = response.getUrl();
+                    createPostWithMedia(title, content, imageUrl);
+                }
+
+                @Override
+                public void onError(String message) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Failed to upload image: " + message, Toast.LENGTH_SHORT).show();
+                        resetPublishButton();
+                    });
+                }
+            });
+        } catch (Exception e) {
+            requireActivity().runOnUiThread(() -> {
+                Toast.makeText(requireContext(), "Failed to process image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                resetPublishButton();
+            });
+        }
+    }
+
+    /**
+     * Convert URI to File
+     */
+    private File uriToFile(Uri uri) {
+        try {
+            // Create temp file
+            File tempFile = File.createTempFile("upload_", ".jpg", requireContext().getCacheDir());
+
+            // Copy URI content to temp file
+            java.io.InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+            FileOutputStream outputStream = new FileOutputStream(tempFile);
+
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+
+            inputStream.close();
+            outputStream.close();
+
+            return tempFile;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to convert URI to file", e);
+            return null;
+        }
+    }
+
+    /**
+     * Create post with optional media URL
+     */
+    private void createPostWithMedia(String title, String content, String imageUrl) {
+        // Build media list
+        List<MediaItem> medias = null;
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            medias = new ArrayList<>();
+            MediaItem mediaItem = new MediaItem();
+            mediaItem.setType("image");
+            mediaItem.setUrl(imageUrl);
+            mediaItem.setDisplayOrder(0);
+            medias.add(mediaItem);
+        }
+
+        // Create post request
+        PostCreateRequest createRequest = new PostCreateRequest(
+            title,
+            content,
+            true, // publish
+            new ArrayList<>(createVm.getSelectedTags().getValue()),
+            medias
+        );
+
+        // Call backend API
         PostRepository.getInstance().createPost(createRequest, new PostRepository.ResultCallback<Map<String, Long>>() {
             @Override
             public void onSuccess(Map<String, Long> result) {
@@ -651,9 +764,18 @@ public class CreateFragment extends Fragment {
             public void onError(String message) {
                 requireActivity().runOnUiThread(() -> {
                     Toast.makeText(requireContext(), "Failed to publish: " + message, Toast.LENGTH_SHORT).show();
+                    resetPublishButton();
                 });
             }
         });
+    }
+
+    /**
+     * Reset publish button to enabled state
+     */
+    private void resetPublishButton() {
+        btnPublish.setEnabled(true);
+        btnPublish.setText("Publish");
     }
 
     private void clearDraft() {
