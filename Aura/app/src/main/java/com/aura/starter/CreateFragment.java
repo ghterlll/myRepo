@@ -694,8 +694,11 @@ public class CreateFragment extends Fragment {
      */
     private File uriToFile(Uri uri) {
         try {
-            // Create temp file
-            File tempFile = File.createTempFile("upload_", ".jpg", requireContext().getCacheDir());
+            // Determine file extension from MIME type or URI
+            String extension = getFileExtensionFromUri(uri);
+
+            // Create temp file with correct extension
+            File tempFile = File.createTempFile("upload_", extension, requireContext().getCacheDir());
 
             // Copy URI content to temp file
             java.io.InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
@@ -715,6 +718,38 @@ public class CreateFragment extends Fragment {
             Log.e(TAG, "Failed to convert URI to file", e);
             return null;
         }
+    }
+
+    /**
+     * Get file extension from URI based on MIME type
+     */
+    private String getFileExtensionFromUri(Uri uri) {
+        // Try to get MIME type from content resolver
+        String mimeType = requireContext().getContentResolver().getType(uri);
+
+        if (mimeType != null) {
+            switch (mimeType) {
+                case "image/jpeg":
+                    return ".jpg";
+                case "image/png":
+                    return ".png";
+                case "image/gif":
+                    return ".gif";
+                case "image/webp":
+                    return ".webp";
+            }
+        }
+
+        // Fallback: try to get extension from URI path
+        String path = uri.getPath();
+        if (path != null) {
+            if (path.toLowerCase().endsWith(".png")) return ".png";
+            if (path.toLowerCase().endsWith(".gif")) return ".gif";
+            if (path.toLowerCase().endsWith(".webp")) return ".webp";
+        }
+
+        // Default to jpg
+        return ".jpg";
     }
 
     /**

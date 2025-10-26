@@ -32,7 +32,8 @@ public class FileRepository {
     // ==================== File Upload ====================
 
     public void uploadPostImage(File imageFile, ResultCallback<FileUploadResponse> callback) {
-        RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), imageFile);
+        String mimeType = getMimeTypeFromFile(imageFile);
+        RequestBody requestFile = RequestBody.create(MediaType.parse(mimeType), imageFile);
         MultipartBody.Part body = MultipartBody.Part.createFormData("file", imageFile.getName(), requestFile);
 
         apiService.uploadPostImage(body).enqueue(new Callback<ApiResponse<FileUploadResponse>>() {
@@ -54,7 +55,8 @@ public class FileRepository {
     }
 
     public void uploadAvatar(File imageFile, ResultCallback<FileUploadResponse> callback) {
-        RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), imageFile);
+        String mimeType = getMimeTypeFromFile(imageFile);
+        RequestBody requestFile = RequestBody.create(MediaType.parse(mimeType), imageFile);
         MultipartBody.Part body = MultipartBody.Part.createFormData("file", imageFile.getName(), requestFile);
 
         apiService.uploadAvatar(body).enqueue(new Callback<ApiResponse<FileUploadResponse>>() {
@@ -76,7 +78,8 @@ public class FileRepository {
     }
 
     public void uploadFoodImage(File imageFile, ResultCallback<FileUploadResponse> callback) {
-        RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), imageFile);
+        String mimeType = getMimeTypeFromFile(imageFile);
+        RequestBody requestFile = RequestBody.create(MediaType.parse(mimeType), imageFile);
         MultipartBody.Part body = MultipartBody.Part.createFormData("file", imageFile.getName(), requestFile);
 
         apiService.uploadFoodImage(body).enqueue(new Callback<ApiResponse<FileUploadResponse>>() {
@@ -117,6 +120,27 @@ public class FileRepository {
     }
 
     // ==================== Helper ====================
+
+    /**
+     * Determine MIME type from file extension
+     * Backend only accepts: image/jpeg, image/png, image/gif, image/webp
+     */
+    private String getMimeTypeFromFile(File file) {
+        String filename = file.getName().toLowerCase();
+
+        if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) {
+            return "image/jpeg";
+        } else if (filename.endsWith(".png")) {
+            return "image/png";
+        } else if (filename.endsWith(".gif")) {
+            return "image/gif";
+        } else if (filename.endsWith(".webp")) {
+            return "image/webp";
+        }
+
+        // Default to jpeg if unknown
+        return "image/jpeg";
+    }
 
     private <T> String getErrorMessage(Response<ApiResponse<T>> response) {
         if (response.body() != null && response.body().getMessage() != null) {

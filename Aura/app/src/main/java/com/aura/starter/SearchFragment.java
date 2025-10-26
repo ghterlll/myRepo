@@ -207,9 +207,19 @@ public class SearchFragment extends Fragment {
     private class HotTermsAdapter extends RecyclerView.Adapter<HotTermsAdapter.ViewHolder> {
         @NonNull @Override public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             TextView textView = new TextView(requireContext());
-            textView.setPadding(16, 8, 16, 8);
-            textView.setBackgroundResource(android.R.drawable.btn_default_small);
-            textView.setTextColor(getResources().getColor(android.R.color.black));
+            // Modern green chip styling with proper margins
+            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.setMargins(0, 0, 16, 0); // Right margin for spacing
+            textView.setLayoutParams(params);
+            textView.setPadding(32, 20, 32, 20); // Larger padding for modern look
+            textView.setBackgroundResource(R.drawable.bg_chip_green);
+            textView.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+            textView.setTextSize(14);
+            textView.setClickable(true);
+            textView.setFocusable(true);
             return new ViewHolder(textView);
         }
 
