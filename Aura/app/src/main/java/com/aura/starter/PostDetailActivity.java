@@ -81,33 +81,56 @@ public class PostDetailActivity extends AppCompatActivity {
         // Like handler - immediate UI update + backend sync
         layoutLike.setOnClickListener(v -> {
             // Toggle local state immediately for instant feedback
-            post.liked = !post.liked;
+            boolean newLikedState = !post.liked;
+            post.liked = newLikedState;
             interactionManager.setLiked(post.id, post.liked);
 
             // Update UI immediately
             btnLike.setImageResource(post.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
 
-            // Sync with backend
+            // Sync with backend - call like or unlike based on new state
             try {
                 Long postId = Long.parseLong(post.id);
-                postRepo.likePost(postId, new PostRepository.ResultCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void data) {
-                        // Success - state already updated
-                        Log.d(TAG, "Like synced to backend");
-                    }
 
-                    @Override
-                    public void onError(String message) {
-                        // Failed - revert local state
-                        runOnUiThread(() -> {
-                            post.liked = !post.liked;
-                            interactionManager.setLiked(post.id, post.liked);
-                            btnLike.setImageResource(post.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
-                            Toast.makeText(PostDetailActivity.this, "Failed to like: " + message, Toast.LENGTH_SHORT).show();
-                        });
-                    }
-                });
+                if (newLikedState) {
+                    // User is liking the post
+                    postRepo.likePost(postId, new PostRepository.ResultCallback<Void>() {
+                        @Override
+                        public void onSuccess(Void data) {
+                            Log.d(TAG, "Like synced to backend");
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            // Failed - revert local state
+                            runOnUiThread(() -> {
+                                post.liked = !post.liked;
+                                interactionManager.setLiked(post.id, post.liked);
+                                btnLike.setImageResource(post.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+                                Toast.makeText(PostDetailActivity.this, "Failed to like: " + message, Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
+                } else {
+                    // User is unliking the post
+                    postRepo.unlikePost(postId, new PostRepository.ResultCallback<Void>() {
+                        @Override
+                        public void onSuccess(Void data) {
+                            Log.d(TAG, "Unlike synced to backend");
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            // Failed - revert local state
+                            runOnUiThread(() -> {
+                                post.liked = !post.liked;
+                                interactionManager.setLiked(post.id, post.liked);
+                                btnLike.setImageResource(post.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+                                Toast.makeText(PostDetailActivity.this, "Failed to unlike: " + message, Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
+                }
             } catch (NumberFormatException e) {
                 Log.e(TAG, "Invalid post ID: " + post.id, e);
             }
@@ -116,33 +139,56 @@ public class PostDetailActivity extends AppCompatActivity {
         // Bookmark handler - immediate UI update + backend sync
         layoutBookmark.setOnClickListener(v -> {
             // Toggle local state immediately for instant feedback
-            post.bookmarked = !post.bookmarked;
+            boolean newBookmarkedState = !post.bookmarked;
+            post.bookmarked = newBookmarkedState;
             interactionManager.setBookmarked(post.id, post.bookmarked);
 
             // Update UI immediately
             btnBookmark.setImageResource(post.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
 
-            // Sync with backend
+            // Sync with backend - call bookmark or unbookmark based on new state
             try {
                 Long postId = Long.parseLong(post.id);
-                postRepo.bookmarkPost(postId, new PostRepository.ResultCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void data) {
-                        // Success - state already updated
-                        Log.d(TAG, "Bookmark synced to backend");
-                    }
 
-                    @Override
-                    public void onError(String message) {
-                        // Failed - revert local state
-                        runOnUiThread(() -> {
-                            post.bookmarked = !post.bookmarked;
-                            interactionManager.setBookmarked(post.id, post.bookmarked);
-                            btnBookmark.setImageResource(post.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
-                            Toast.makeText(PostDetailActivity.this, "Failed to bookmark: " + message, Toast.LENGTH_SHORT).show();
-                        });
-                    }
-                });
+                if (newBookmarkedState) {
+                    // User is bookmarking the post
+                    postRepo.bookmarkPost(postId, new PostRepository.ResultCallback<Void>() {
+                        @Override
+                        public void onSuccess(Void data) {
+                            Log.d(TAG, "Bookmark synced to backend");
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            // Failed - revert local state
+                            runOnUiThread(() -> {
+                                post.bookmarked = !post.bookmarked;
+                                interactionManager.setBookmarked(post.id, post.bookmarked);
+                                btnBookmark.setImageResource(post.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
+                                Toast.makeText(PostDetailActivity.this, "Failed to bookmark: " + message, Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
+                } else {
+                    // User is unbookmarking the post
+                    postRepo.unbookmarkPost(postId, new PostRepository.ResultCallback<Void>() {
+                        @Override
+                        public void onSuccess(Void data) {
+                            Log.d(TAG, "Unbookmark synced to backend");
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            // Failed - revert local state
+                            runOnUiThread(() -> {
+                                post.bookmarked = !post.bookmarked;
+                                interactionManager.setBookmarked(post.id, post.bookmarked);
+                                btnBookmark.setImageResource(post.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
+                                Toast.makeText(PostDetailActivity.this, "Failed to unbookmark: " + message, Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
+                }
             } catch (NumberFormatException e) {
                 Log.e(TAG, "Invalid post ID: " + post.id, e);
             }

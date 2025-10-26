@@ -126,17 +126,20 @@ public class FeedViewModel extends ViewModel {
     private List<Post> convertPostCardResponseToPosts(List<PostCardResponse> responses) {
         List<Post> posts = new ArrayList<>();
         for (PostCardResponse response : responses) {
-            android.util.Log.d("FeedViewModel", "Converting post - ID: " + response.getId() + 
+            android.util.Log.d("FeedViewModel", "Converting post - ID: " + response.getId() +
                 ", Title: " + response.getTitle() + ", CoverUrl: " + response.getCoverUrl());
-            
+
             Post post = new Post(
                 response.getId().toString(),
-                "User" + response.getAuthorId(), // TODO: 需要从后端获取用户名
+                "User" + response.getAuthorId(), // Keep authorId for backward compatibility
                 response.getTitle(),
                 "", // 后端PostCardResp目前没有content字段
                 "fitness,diet", // TODO: 后端需要添加tags字段到PostCardResp
                 response.getCoverUrl()
             );
+            // Set author nickname from backend
+            post.authorNickname = response.getAuthorNickname();
+
             // 设置创建时间
             try {
                 post.createdAt = Long.parseLong(response.getCreatedAt());

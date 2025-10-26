@@ -158,6 +158,7 @@ public class SearchResultsActivity extends AppCompatActivity {
                             "",
                             postCard.getCoverUrl()
                         );
+                        post.authorNickname = postCard.getAuthorNickname();
                         currentPosts.add(post);
                     }
 
@@ -236,12 +237,13 @@ public class SearchResultsActivity extends AppCompatActivity {
                     for (PostCardResponse postCard : response.getItems()) {
                         Post post = new Post(
                             postCard.getId().toString(),
-                            "User" + postCard.getAuthorId(), // TODO: Get actual username
+                            "User" + postCard.getAuthorId(), // Keep for backward compatibility
                             postCard.getTitle(),
                             "", // PostCardResp doesn't have content
                             "", // TODO: Get tags from backend
                             postCard.getCoverUrl()
                         );
+                        post.authorNickname = postCard.getAuthorNickname();
                         currentPosts.add(post);
                     }
 

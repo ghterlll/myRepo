@@ -268,13 +268,15 @@ public class Post {
      * Convert this entity to PostCardResp DTO.
      *
      * @param coverUrl URL of the cover image
+     * @param authorNickname Nickname of the post author
      * @return PostCardResp DTO
      */
-    public PostCardResp toCardResp(String coverUrl) {
+    public PostCardResp toCardResp(String coverUrl, String authorNickname) {
         return new PostCardResp(
                 this.id,
                 coverUrl,
                 this.authorId,
+                authorNickname,
                 this.title,
                 this.createdAt == null ? null : FORMATTER.format(this.createdAt)
         );
@@ -319,14 +321,19 @@ public class Post {
      * @param posts query results (limit + 1 items)
      * @param limit the page size limit
      * @param coverUrlProvider function to get cover URL for each post ID
+     * @param authorNicknameProvider function to get author nickname for each author ID
      * @return PageResponse with post cards, cursor, and pagination metadata
      */
     public static PageResponse<PostCardResp> toCardsPageResponse(
             List<Post> posts,
             int limit,
-            Function<Long, String> coverUrlProvider) {
+            Function<Long, String> coverUrlProvider,
+            Function<Long, String> authorNicknameProvider) {
         List<PostCardResp> cards = posts.stream()
-                .map(post -> post.toCardResp(coverUrlProvider.apply(post.getId())))
+                .map(post -> post.toCardResp(
+                        coverUrlProvider.apply(post.getId()),
+                        authorNicknameProvider.apply(post.getAuthorId())
+                ))
                 .toList();
 
         return PageResponse.paginate(

@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -15,7 +16,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -36,7 +36,7 @@ public class SearchFragment extends Fragment {
     private static final String KEY_HISTORY = "history";
     private static final int MAX_HISTORY_ITEMS = 5;
 
-    private TextInputEditText etSearch;
+    private EditText etSearch;
     private RecyclerView recyclerHotTerms;
     private RecyclerView recyclerHistory;
     private TextView tvClearAll;

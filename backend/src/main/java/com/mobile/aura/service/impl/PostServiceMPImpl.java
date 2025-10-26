@@ -38,6 +38,7 @@ public class PostServiceMPImpl implements PostService {
     private final PostBookmarkMapper bookmarkMapper;
     private final PostCommentMapper commentMapper;
 
+    private final UserMapper userMapper;
     private final UserFollowMapper followMapper;
     private final UserBlockMapper blockMapper;
     private final UserSocialStatsMapper socialStatsMapper;
@@ -249,7 +250,10 @@ public class PostServiceMPImpl implements PostService {
                 limit,
                 postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
                         .map(PostMedia::getUrl)
-                        .orElse(null)
+                        .orElse(null),
+                authorId -> Optional.ofNullable(userMapper.selectById(authorId))
+                        .map(user -> user.getNickname())
+                        .orElse("Unknown")
         );
     }
 
@@ -275,7 +279,10 @@ public class PostServiceMPImpl implements PostService {
                             limit,
                             postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
                                     .map(PostMedia::getUrl)
-                                    .orElse(null)
+                                    .orElse(null),
+                            authorId -> Optional.ofNullable(userMapper.selectById(authorId))
+                                    .map(user -> user.getNickname())
+                                    .orElse("Unknown")
                     );
                 })
                 .orElse(PageResponse.empty());
@@ -294,7 +301,10 @@ public class PostServiceMPImpl implements PostService {
                 limit,
                 postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
                         .map(PostMedia::getUrl)
-                        .orElse(null)
+                        .orElse(null),
+                authorId -> Optional.ofNullable(userMapper.selectById(authorId))
+                        .map(user -> user.getNickname())
+                        .orElse("Unknown")
         );
     }
 

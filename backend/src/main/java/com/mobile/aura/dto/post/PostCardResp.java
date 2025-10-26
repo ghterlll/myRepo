@@ -11,6 +11,7 @@ public class PostCardResp {
     private Long id;
     private String coverUrl;
     private Long authorId;
+    private String authorNickname;
     private String title;
     private String createdAt;
 }

@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class Post implements Serializable {
     public long createdAt;
-    public String id, author, title, content, tags;
+    public String id, author, authorNickname, title, content, tags;
     public int likes = 0;
     public boolean liked = false, bookmarked = false;
 
