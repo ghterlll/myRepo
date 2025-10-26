@@ -16,6 +16,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.aura.starter.model.Post;
 import com.aura.starter.widget.DraggableFloatingButton;
 import com.google.android.material.textfield.TextInputEditText;
+import android.widget.TextView;
 
 public class FeedFragment extends Fragment {
 
@@ -24,6 +25,7 @@ public class FeedFragment extends Fragment {
     private RecyclerView recycler;
     private PostAdapter adapter;
     private DraggableFloatingButton fabCreate;
+    private TextView etSearch;
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -203,6 +205,7 @@ public class FeedFragment extends Fragment {
      */
     private void setupSearchBar(View view) {
         View searchBar = view.findViewById(R.id.searchBar);
+        etSearch = view.findViewById(R.id.etSearch);
 
         // Add click listener to open search page
         searchBar.setOnClickListener(v -> {
