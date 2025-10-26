@@ -2,14 +2,18 @@ package com.mobile.aura.domain.user;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mobile.aura.constant.GenderEnum;
 import com.mobile.aura.dto.user.UserProfileUpdateReq;
+import com.mobile.aura.dto.user.UserRecommendationProfileUpdateReq;
 import lombok.Data;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -19,6 +23,7 @@ import java.util.function.Consumer;
  * Health data moved to UserHealthProfile.
  * Social stats moved to UserSocialStats.
  * Privacy settings moved to UserPrivacySettings.
+ * Includes recommendation system fields (device_preference, recent_geos, activity_level).
  */
 @Data
 @TableName("user_profile")
@@ -28,12 +33,19 @@ public class UserProfile {
     @TableId
     private Long userId;
 
+    // Basic profile fields
     private String bio;
     private Integer gender;
     private LocalDate birthday;
     private Integer age;
     private String location;
     private String interests;
+
+    // Recommendation system fields
+    private String devicePreference;
+    private String recentGeos;
+    private String activityLevel;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -49,6 +61,9 @@ public class UserProfile {
         LocalDateTime now = LocalDateTime.now();
         profile.setCreatedAt(now);
         profile.setUpdatedAt(now);
+        // Set default values for recommendation system fields
+        profile.setDevicePreference("Android");
+        profile.setActivityLevel("low");
         return profile;
     }
 
@@ -64,6 +79,19 @@ public class UserProfile {
         updateIfPresent(request.getAge(), this::setAge);
         updateIfPresent(request.getLocation(), this::setLocation);
         updateIfPresent(request.getInterests(), this::setInterests);
+    }
+
+    /**
+     * Apply recommendation profile updates from request DTO.
+     * Only updates recommendation-related fields.
+     *
+     * @param request recommendation profile update request
+     */
+    public void applyRecommendationUpdates(UserRecommendationProfileUpdateReq request) {
+        updateInterestsJsonIfPresent(request.getInterests());
+        updateIfPresent(request.getDevicePreference(), this::setDevicePreference);
+        updateRecentGeosJsonIfPresent(request.getRecentGeos());
+        updateIfPresent(request.getActivityLevel(), this::setActivityLevel);
     }
 
     /**
@@ -101,5 +129,37 @@ public class UserProfile {
 
     private <T> void updateIfPresent(T value, Consumer<T> setter) {
         Optional.ofNullable(value).ifPresent(setter);
+    }
+
+    /**
+     * Update interests field with JSON serialization
+     */
+    private void updateInterestsJsonIfPresent(List<String> interests) {
+        if (interests != null) {
+            this.interests = toJson(interests);
+        }
+    }
+
+    /**
+     * Update recent geos field with JSON serialization
+     */
+    private void updateRecentGeosJsonIfPresent(List<UserRecommendationProfileUpdateReq.GeoLocation> geos) {
+        if (geos != null) {
+            this.recentGeos = toJson(geos);
+        }
+    }
+
+    /**
+     * Convert object to JSON string
+     */
+    private String toJson(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        try {
+            return new ObjectMapper().writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize to JSON", e);
+        }
     }
 }

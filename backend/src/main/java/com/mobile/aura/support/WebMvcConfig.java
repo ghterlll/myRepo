@@ -15,19 +15,15 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(jwt)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
-                        "/auth/**",
-                        "/users/register",
-                        "/user/register",
-                        "/user/auth/**",
-                        "/error",
-                        "/api/test/**",
-                        "/test/**",                      // Test endpoints
                         "/api/v1/user/register",         // Official registration
                         "/api/v1/user/register/**",      // Registration sub-paths
-                        "/api/v1/user/register/code",    // Registration code endpoint
-                        "/api/v1/user/register/verify",  // Registration verify endpoint
                         "/api/v1/user/auth/**",          // Auth endpoints (login, refresh)
-                        "/api/v1/user/login"             // Login alias
+                        "/api/v1/user/login",            // Login alias
+                        "/swagger-ui/**",                // Swagger UI resources
+                        "/swagger-ui.html",              // Swagger UI page
+                        "/v3/api-docs/**",               // OpenAPI documentation
+                        "/swagger-resources/**",         // Swagger resources
+                        "/webjars/**"                    // Swagger UI dependencies
                 );
     }
 }

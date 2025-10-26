@@ -1,6 +1,7 @@
 package com.mobile.aura.service.impl;
 
 import com.mobile.aura.domain.content.*;
+import com.mobile.aura.domain.event.EventLog.EventType;
 import com.mobile.aura.domain.user.UserFollow;
 import com.mobile.aura.domain.user.UserSocialStats;
 import com.mobile.aura.dto.Cursor;
@@ -8,6 +9,7 @@ import com.mobile.aura.dto.PageResponse;
 import com.mobile.aura.dto.post.*;
 import com.mobile.aura.dto.tag.TagDtos;
 import com.mobile.aura.mapper.*;
+import com.mobile.aura.service.EventLogService;
 import com.mobile.aura.service.PostService;
 import com.mobile.aura.service.TagService;
 import com.mobile.aura.support.BizException;
@@ -41,6 +43,7 @@ public class PostServiceMPImpl implements PostService {
     private final UserSocialStatsMapper socialStatsMapper;
 
     private final TagService tagService;
+    private final EventLogService eventLogService;
 
     /* --------------------- Utility Methods --------------------- */
 
@@ -207,6 +210,11 @@ public class PostServiceMPImpl implements PostService {
     public PostDetailResp detail(Long viewer, Long postId) {
         Post p = mustReadablePost(viewer, postId);
 
+        // Log click event (user viewed post detail)
+        if (viewer != null) {
+            eventLogService.logEventAsync(viewer, postId, EventType.CLICK);
+        }
+
         // Fetch media items
         List<PostMedia> mds = mediaMapper.listByPostId(postId);
         List<MediaItem> medias = mds.stream().map(Post::toMediaItem).toList();
@@ -297,6 +305,9 @@ public class PostServiceMPImpl implements PostService {
 
         // Increment like count in statistics table
         PostStatistics.ensureUpdated(statisticsMapper.incLikeCount(postId, 1));
+
+        // Log like event
+        eventLogService.logEventAsync(uid, postId, EventType.LIKE);
     }
 
     /**
@@ -330,6 +341,9 @@ public class PostServiceMPImpl implements PostService {
 
         // Increment bookmark count in statistics table
         PostStatistics.ensureUpdated(statisticsMapper.incBookmarkCount(postId, 1));
+
+        // Log favorite event
+        eventLogService.logEventAsync(uid, postId, EventType.FAVORITE);
     }
 
     /**
@@ -356,9 +370,14 @@ public class PostServiceMPImpl implements PostService {
     public Long createComment(Long uid, Long postId, CommentCreateReq req) {
         mustReadablePost(uid, postId);
 
-        return Optional.ofNullable(req.getParentId())
+        Long commentId = Optional.ofNullable(req.getParentId())
                 .map(parentId -> createReplyComment(uid, postId, parentId, req.getContent()))
                 .orElseGet(() -> createRootComment(uid, postId, req.getContent()));
+
+        // Log comment event
+        eventLogService.logEventAsync(uid, postId, EventType.COMMENT);
+
+        return commentId;
     }
 
     /**

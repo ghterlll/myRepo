@@ -30,7 +30,7 @@ CREATE TABLE `user` (
   KEY `idx_phone` (`phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User account table';
 
--- User basic profile information
+-- User basic profile information (merged with recommendation system fields)
 DROP TABLE IF EXISTS `user_profile`;
 CREATE TABLE `user_profile` (
   `id` BIGINT(20) NOT NULL AUTO_INCREMENT,
@@ -39,13 +39,18 @@ CREATE TABLE `user_profile` (
   `gender` TINYINT(4) DEFAULT NULL COMMENT 'Gender: 0=female, 1=male, 2=other',
   `birthday` DATE DEFAULT NULL COMMENT 'Date of birth',
   `age` TINYINT(4) DEFAULT NULL COMMENT 'Age (calculated or manual)',
-  `location` VARCHAR(128) DEFAULT NULL COMMENT 'User location',
-  `interests` VARCHAR(512) DEFAULT NULL COMMENT 'User interests (comma-separated)',
+  `location` VARCHAR(128) DEFAULT "Melbourne" COMMENT 'User location',
+  `interests` JSON DEFAULT NULL COMMENT 'User interests (JSON array)',
+  `device_preference` VARCHAR(20) DEFAULT 'Android' COMMENT 'Preferred device type (iOS/Android/Web)',
+  `recent_geos` JSON DEFAULT NULL COMMENT 'Recent geographic locations (JSON array of {lat, lon, timestamp})',
+  `activity_level` VARCHAR(10) DEFAULT 'low' COMMENT 'Activity level (low/medium/high)',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User extended profile information';
+  UNIQUE KEY `uk_user_id` (`user_id`),
+  KEY `idx_location` (`location`),
+  KEY `idx_activity_level` (`activity_level`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User profile with recommendation system fields';
 
 -- User health profile (weight, fitness goals, etc.)
 DROP TABLE IF EXISTS `user_health_profile`;
@@ -107,15 +112,16 @@ CREATE TABLE `auth_refresh_token` (
 DROP TABLE IF EXISTS `email_code`;
 CREATE TABLE `email_code` (
   `id` BIGINT(20) NOT NULL AUTO_INCREMENT,
-  `user_id` BIGINT(20) NOT NULL COMMENT 'User ID',
+  `user_id` BIGINT(20) DEFAULT NULL COMMENT 'User ID (NULL for registration)',
   `email` VARCHAR(255) NOT NULL COMMENT 'Email address',
-  `purpose` ENUM('RESET_PASSWORD') NOT NULL COMMENT 'Code purpose',
+  `purpose` ENUM('RESET_PASSWORD', 'REGISTER') NOT NULL COMMENT 'Code purpose',
   `code_hash` VARCHAR(64) NOT NULL COMMENT 'Hashed verification code',
   `expires_at` DATETIME NOT NULL COMMENT 'Code expiration time',
   `used_at` DATETIME DEFAULT NULL COMMENT 'Time when code was used',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_purpose` (`user_id`, `purpose`)
+  KEY `idx_user_purpose` (`user_id`, `purpose`),
+  KEY `idx_email_purpose` (`email`, `purpose`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Email verification codes';
 
 -- ============================================
@@ -156,13 +162,18 @@ CREATE TABLE `posts` (
   `visibility` ENUM('public', 'followers', 'private') NOT NULL DEFAULT 'public' COMMENT 'Post visibility',
   `status` ENUM('draft', 'published', 'hidden', 'deleted') NOT NULL DEFAULT 'draft' COMMENT 'Post status',
   `media_count` TINYINT(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Number of media attachments',
+  `category` VARCHAR(50) DEFAULT 'health' COMMENT 'Content category for recommendation (health/fitness/nutrition/mental-health/etc)',
+  `geo_lat` DECIMAL(10,8) DEFAULT -37.81361100 COMMENT 'Post location latitude (default: Melbourne)',
+  `geo_lon` DECIMAL(11,8) DEFAULT 144.96305600 COMMENT 'Post location longitude (default: Melbourne)',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` DATETIME DEFAULT NULL COMMENT 'Soft delete timestamp',
   PRIMARY KEY (`id`),
   KEY `idx_posts_created` (`created_at`, `id`),
   KEY `idx_posts_author_created` (`author_id`, `created_at`, `id`),
-  KEY `idx_posts_status_created` (`status`, `created_at`, `id`)
+  KEY `idx_posts_status_created` (`status`, `created_at`, `id`),
+  KEY `idx_category` (`category`),
+  KEY `idx_geo` (`geo_lat`, `geo_lon`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC COMMENT='Posts and content';
 
 -- Post statistics (separated for performance)
@@ -380,67 +391,33 @@ CREATE TABLE `step_count` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Step count tracking with idempotency';
 
 -- ============================================
--- System & Analytics Tables
+-- Recommendation System Tables
 -- ============================================
 
--- User features snapshot (separated from content_exposure)
-DROP TABLE IF EXISTS `user_features`;
-CREATE TABLE `user_features` (
+-- Event log for user behavior tracking
+DROP TABLE IF EXISTS `event_log`;
+CREATE TABLE `event_log` (
   `id` BIGINT(20) NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT(20) NOT NULL COMMENT 'User ID',
-  `age` TINYINT(4) DEFAULT NULL COMMENT 'Age',
-  `region` VARCHAR(64) DEFAULT NULL COMMENT 'Permanent residence',
-  `activity_lvl` TINYINT(4) DEFAULT NULL COMMENT 'Activity level',
-  `interests` VARCHAR(256) DEFAULT NULL COMMENT 'Interest tags',
-  `follow_count` INT(11) DEFAULT NULL COMMENT 'Following count',
-  `snapshot_time` DATETIME NOT NULL COMMENT 'Feature snapshot timestamp',
+  `item_id` BIGINT(20) NOT NULL COMMENT 'Item/Content ID',
+  `event_type` VARCHAR(20) NOT NULL COMMENT 'Event type (expose/click/like/favorite/share/comment)',
+  `ts` DATETIME NOT NULL COMMENT 'Event timestamp',
+  `session_id` BIGINT(20) DEFAULT NULL COMMENT 'Session identifier',
+  `dwell_time` DECIMAL(10,2) DEFAULT NULL COMMENT 'Dwell time in seconds',
+  `device_type` VARCHAR(20) DEFAULT 'Android' COMMENT 'Device type (iOS/Android/Web)',
+  `network_type` VARCHAR(20) DEFAULT 'WiFi' COMMENT 'Network type (WiFi/4G/5G)',
+  `geo_lat` DECIMAL(10,8) DEFAULT -37.81361100 COMMENT 'Latitude (default: Melbourne)',
+  `geo_lon` DECIMAL(11,8) DEFAULT 144.96305600 COMMENT 'Longitude (default: Melbourne)',
+  `city` VARCHAR(50) DEFAULT 'Melbourne' COMMENT 'City name',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_uf_user_time` (`user_id`, `snapshot_time`),
-  KEY `idx_uf_snapshot_time` (`snapshot_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User features snapshot for analytics';
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_item_id` (`item_id`),
+  KEY `idx_event_type` (`event_type`),
+  KEY `idx_ts` (`ts`),
+  KEY `idx_session_id` (`session_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Event log for user behavior tracking';
 
--- Content feature snapshot (separated from content_exposure)
-DROP TABLE IF EXISTS `content_feature`;
-CREATE TABLE `content_feature` (
-  `id` BIGINT(20) NOT NULL AUTO_INCREMENT,
-  `post_id` BIGINT(20) UNSIGNED NOT NULL COMMENT 'Reference to posts.id',
-  `author_id` BIGINT(20) UNSIGNED NOT NULL COMMENT 'Content author ID',
-  `publish_time` DATETIME NOT NULL COMMENT 'Content publish time',
-  `heat_score` DECIMAL(10,2) DEFAULT NULL COMMENT 'Content heat score',
-  `tag_ids` VARCHAR(256) DEFAULT NULL COMMENT 'Comma-separated tag IDs',
-  `snapshot_time` DATETIME NOT NULL COMMENT 'Feature snapshot timestamp',
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_cf_post` (`post_id`),
-  KEY `idx_cf_snapshot_time` (`snapshot_time`),
-  CONSTRAINT `fk_cf_post` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Content features snapshot for analytics';
-
--- Content exposure tracking
-DROP TABLE IF EXISTS `content_exposure`;
-CREATE TABLE `content_exposure` (
-  `id` BIGINT(20) NOT NULL AUTO_INCREMENT,
-  `user_id` BIGINT(20) NOT NULL COMMENT 'User ID',
-  `user_feature_id` BIGINT(20) DEFAULT NULL COMMENT 'Reference to user_features.id',
-  `content_feature_id` BIGINT(20) DEFAULT NULL COMMENT 'Reference to content_feature.id',
-  `content_id` VARCHAR(50) NOT NULL COMMENT 'Content identifier',
-  `exposure_time` DATETIME NOT NULL COMMENT 'Exposure timestamp',
-  `platform` VARCHAR(20) NOT NULL COMMENT 'Platform name',
-  `weekday` TINYINT(4) DEFAULT NULL COMMENT 'Day of week (1-7)',
-  `weather` VARCHAR(16) DEFAULT NULL COMMENT 'Weather condition',
-  `device` VARCHAR(32) DEFAULT NULL COMMENT 'Device information',
-  `city` VARCHAR(64) DEFAULT NULL COMMENT 'City name',
-  PRIMARY KEY (`id`),
-  KEY `idx_ce_user_time` (`user_id`, `exposure_time`),
-  KEY `idx_ce_content` (`content_id`),
-  KEY `idx_ce_city_time` (`city`, `exposure_time`),
-  KEY `idx_ce_platform_wd` (`platform`, `weekday`),
-  KEY `idx_ce_user_feature` (`user_feature_id`),
-  KEY `idx_ce_content_feature` (`content_feature_id`),
-  CONSTRAINT `fk_ce_user_feature` FOREIGN KEY (`user_feature_id`) REFERENCES `user_features` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_ce_content_feature` FOREIGN KEY (`content_feature_id`) REFERENCES `content_feature` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Content exposure tracking for analytics';
 
 SET FOREIGN_KEY_CHECKS = 1;
 

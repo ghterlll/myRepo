@@ -126,6 +126,56 @@ public class MealLog {
         }
     }
 
+    /**
+     * Updates meal log fields from edit request.
+     * Only updates fields that are provided (non-null).
+     * For sourceId-based meals, recalculates calories if quantity changes.
+     *
+     * @param request edit request with optional fields
+     * @param userFoodItem food item from database (null if this is free input meal)
+     */
+    public void updateFromRequest(com.mobile.aura.dto.meal.MealEditReq request, UserFoodItem userFoodItem) {
+        // Update date if provided
+        if (request.getDate() != null) {
+            this.mealDate = request.getDateAsLocalDate();
+        }
+
+        // Update meal type if provided
+        if (request.getMealType() != null) {
+            this.mealType = request.getMealType();
+        }
+
+        // Update item name if provided
+        if (request.getItemName() != null && !request.getItemName().isBlank()) {
+            this.itemName = request.getItemName().trim();
+        }
+
+        // Update unit name if provided
+        if (request.getUnitName() != null && !request.getUnitName().isBlank()) {
+            this.unitName = request.getUnitName().trim();
+        }
+
+        // Update quantity and recalculate calories if needed
+        if (request.getUnitQty() != null) {
+            this.unitQty = request.getUnitQty();
+
+            // If this meal has a source, recalculate calories based on new quantity
+            if (this.sourceId != null && userFoodItem != null) {
+                this.kcal = calculateCalories(userFoodItem.getKcalPerUnit(), this.unitQty);
+            }
+        }
+
+        // Update calories directly if provided (for free input meals or manual override)
+        if (request.getKcal() != null) {
+            this.kcal = request.getKcal();
+        }
+
+        // Update image URL if provided
+        if (request.getImageUrl() != null && !request.getImageUrl().isBlank()) {
+            this.imageUrl = request.getImageUrl();
+        }
+    }
+
     // Business rule validation methods
     private static void validateUserFoodItem(UserFoodItem userFoodItem, Long userId) {
         if (userFoodItem == null || !Objects.equals(userFoodItem.getUserId(), userId)) {

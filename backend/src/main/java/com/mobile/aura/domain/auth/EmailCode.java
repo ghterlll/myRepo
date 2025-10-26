@@ -27,9 +27,9 @@ public class EmailCode {
     private LocalDateTime usedAt;
     private LocalDateTime createdAt;
 
-    public static EmailCode createForRegistration(Long userId, String email, String rawCode) {
+    public static EmailCode createForRegistration(String email, String rawCode) {
         EmailCode code = new EmailCode();
-        code.userId = userId;
+        code.userId = null;
         code.email = email;
         code.purpose = EmailCodePurpose.REGISTER.name();
         code.codeHash = hashCode(rawCode);

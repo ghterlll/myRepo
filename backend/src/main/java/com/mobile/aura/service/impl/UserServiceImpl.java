@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
         createUserProfile(u.getId());
 
         // Send verification code to email
-        emailCodeService.sendRegistrationCode(u.getId(), req.getEmail());
+        emailCodeService.sendRegistrationCode(req.getEmail());
     }
 
     /**

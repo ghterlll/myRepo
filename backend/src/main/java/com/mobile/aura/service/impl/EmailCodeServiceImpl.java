@@ -51,9 +51,9 @@ public class EmailCodeServiceImpl implements EmailCodeService {
 
     @Override
     @Transactional
-    public void sendRegistrationCode(Long userId, String email) {
+    public void sendRegistrationCode(String email) {
         String rawCode = EmailCode.generateRawCode();
-        EmailCode emailCode = EmailCode.createForRegistration(userId, email, rawCode);
+        EmailCode emailCode = EmailCode.createForRegistration(email, rawCode);
 
         findExistingRegistrationCode(email)
                 .ifPresentOrElse(
