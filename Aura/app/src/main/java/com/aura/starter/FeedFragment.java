@@ -207,31 +207,19 @@ public class FeedFragment extends Fragment {
         View searchBar = view.findViewById(R.id.searchBar);
         etSearch = view.findViewById(R.id.etSearch);
 
-        // Add click listener to open search page
-        searchBar.setOnClickListener(v -> {
-            // Navigate to search activity
+        // Click listener for opening search activity
+        View.OnClickListener openSearchListener = v -> {
             Intent intent = new Intent(requireContext(), SearchActivity.class);
             startActivity(intent);
+        };
 
-            // Add visual feedback (optional)
-            v.animate()
-                .scaleX(0.98f)
-                .scaleY(0.98f)
-                .setDuration(100)
-                .withEndAction(() -> {
-                    v.animate()
-                        .scaleX(1.0f)
-                        .scaleY(1.0f)
-                        .setDuration(100)
-                        .start();
-                })
-                .start();
-        });
+        // Add click listener to both searchBar and etSearch
+        searchBar.setOnClickListener(openSearchListener);
+        etSearch.setOnClickListener(openSearchListener);
 
-        // Make the search field a navigation button (not editable)
+        // Make sure etSearch doesn't block clicks (TextView, not EditText)
         etSearch.setFocusable(false);
         etSearch.setClickable(true);
-        etSearch.setCursorVisible(false);
     }
 
 

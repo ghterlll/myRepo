@@ -23,6 +23,7 @@ import com.aura.starter.model.Post;
 import com.aura.starter.network.PostRepository;
 import com.aura.starter.network.models.CommentCreateRequest;
 import com.aura.starter.util.GlideUtils;
+import com.aura.starter.util.PostInteractionManager;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
@@ -40,12 +41,18 @@ public class PostDetailActivity extends AppCompatActivity {
     private boolean isContentExpanded = false;
     private BottomSheetDialog commentDialog;
     private PostRepository postRepo = PostRepository.getInstance();
+    private PostInteractionManager interactionManager;
 
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_post_detail);
 
         post = (Post)getIntent().getSerializableExtra("post");
+
+        // Initialize interaction manager and load local state
+        interactionManager = PostInteractionManager.getInstance(this);
+        post.liked = interactionManager.isLiked(post.id);
+        post.bookmarked = interactionManager.isBookmarked(post.id);
 
         // Initialize views
         TextView tvTitle = findViewById(R.id.tvTitle);
@@ -71,27 +78,73 @@ public class PostDetailActivity extends AppCompatActivity {
         // Back button handler
         btnBack.setOnClickListener(v -> finish());
 
-        // Like and bookmark handlers
+        // Like handler - immediate UI update + backend sync
         layoutLike.setOnClickListener(v -> {
+            // Toggle local state immediately for instant feedback
+            post.liked = !post.liked;
+            interactionManager.setLiked(post.id, post.liked);
+
+            // Update UI immediately
+            btnLike.setImageResource(post.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+
+            // Sync with backend
             try {
                 Long postId = Long.parseLong(post.id);
-                FeedViewModel feedVm = new androidx.lifecycle.ViewModelProvider(this).get(FeedViewModel.class);
-                feedVm.toggleLike(postId);
-                // Refresh the current post data
-                bind();
+                postRepo.likePost(postId, new PostRepository.ResultCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void data) {
+                        // Success - state already updated
+                        Log.d(TAG, "Like synced to backend");
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        // Failed - revert local state
+                        runOnUiThread(() -> {
+                            post.liked = !post.liked;
+                            interactionManager.setLiked(post.id, post.liked);
+                            btnLike.setImageResource(post.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+                            Toast.makeText(PostDetailActivity.this, "Failed to like: " + message, Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
             } catch (NumberFormatException e) {
-                android.util.Log.e("PostDetailActivity", "Invalid post ID: " + post.id, e);
+                Log.e(TAG, "Invalid post ID: " + post.id, e);
             }
         });
+
+        // Bookmark handler - immediate UI update + backend sync
         layoutBookmark.setOnClickListener(v -> {
+            // Toggle local state immediately for instant feedback
+            post.bookmarked = !post.bookmarked;
+            interactionManager.setBookmarked(post.id, post.bookmarked);
+
+            // Update UI immediately
+            btnBookmark.setImageResource(post.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
+
+            // Sync with backend
             try {
                 Long postId = Long.parseLong(post.id);
-                FeedViewModel feedVm = new androidx.lifecycle.ViewModelProvider(this).get(FeedViewModel.class);
-                feedVm.toggleBookmark(postId);
-                // Refresh the current post data
-                bind();
+                postRepo.bookmarkPost(postId, new PostRepository.ResultCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void data) {
+                        // Success - state already updated
+                        Log.d(TAG, "Bookmark synced to backend");
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        // Failed - revert local state
+                        runOnUiThread(() -> {
+                            post.bookmarked = !post.bookmarked;
+                            interactionManager.setBookmarked(post.id, post.bookmarked);
+                            btnBookmark.setImageResource(post.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
+                            Toast.makeText(PostDetailActivity.this, "Failed to bookmark: " + message, Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
             } catch (NumberFormatException e) {
-                android.util.Log.e("PostDetailActivity", "Invalid post ID: " + post.id, e);
+                Log.e(TAG, "Invalid post ID: " + post.id, e);
             }
         });
 
@@ -213,11 +266,10 @@ public class PostDetailActivity extends AppCompatActivity {
         btnLike.setImageResource(post.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
         btnBookmark.setImageResource(post.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
 
-        // Update counts (using placeholder 9999+ for now)
-        // TODO: Get real counts from backend API
-        tvLikeCount.setText("9999+");
-        tvBookmarkCount.setText("9999+");
-        tvCommentCount.setText("9999+");
+        // Hide counts until backend provides them (better UX than showing "9999+")
+        tvLikeCount.setVisibility(View.GONE);
+        tvBookmarkCount.setVisibility(View.GONE);
+        tvCommentCount.setVisibility(View.GONE);
 
         // Load image using unified GlideUtils with fitCenter option
         RequestOptions options = new RequestOptions().fitCenter();

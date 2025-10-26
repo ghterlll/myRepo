@@ -17,10 +17,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.aura.starter.model.Post;
+import com.aura.starter.util.PostInteractionManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -33,10 +35,14 @@ public class BookmarksFragment extends Fragment {
     private boolean isLoading = false;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private PostInteractionManager interactionManager;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle s){
         View v = inf.inflate(R.layout.fragment_list_posts, c, false);
         vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
+
+        // Initialize interaction manager
+        interactionManager = PostInteractionManager.getInstance(requireContext());
 
         // Setup views
         setupViews(v);
@@ -53,10 +59,22 @@ public class BookmarksFragment extends Fragment {
         // Setup sorting buttons
         setupSortingButtons(v);
 
-        // Observe displayed posts and filter bookmarks
+        // Observe displayed posts and filter bookmarks using local state
         vm.getDisplayedPosts().observe(getViewLifecycleOwner(), all -> {
             List<Post> list = new ArrayList<>();
-            if (all != null) for (Post p : all) if (p.bookmarked) list.add(p);
+            if (all != null) {
+                // Get bookmarked post IDs from local storage
+                Set<String> bookmarkedIds = interactionManager.getAllBookmarkedIds();
+
+                // Filter posts that are bookmarked
+                for (Post p : all) {
+                    if (bookmarkedIds.contains(p.id)) {
+                        // Update post's bookmarked state
+                        p.bookmarked = true;
+                        list.add(p);
+                    }
+                }
+            }
             current = list;
             sortByTime();
         });
