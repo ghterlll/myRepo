@@ -188,6 +188,35 @@ public class PostController {
                 userId, req.getKeyword(), req.getCategory(), req.getLimit(), req.getCursor()));
     }
 
+    /**
+     * List posts created by the current user (my posts).
+     * Includes all posts regardless of status (draft, published, hidden).
+     *
+     * @param userId the authenticated user ID
+     * @param req pagination request with limit and cursor
+     * @return paginated response with post cards created by the current user
+     */
+    @GetMapping("/me")
+    public ResponseResult<PageResponse<PostCardResp>> listMyPosts(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @Valid @ModelAttribute PostListReq req) {
+        return ResponseResult.success(postService.listMyPosts(userId, req.getLimit(), req.getCursor()));
+    }
+
+    /**
+     * List posts bookmarked by the current user.
+     *
+     * @param userId the authenticated user ID
+     * @param req pagination request with limit and cursor
+     * @return paginated response with bookmarked post cards
+     */
+    @GetMapping("/bookmarks")
+    public ResponseResult<PageResponse<PostCardResp>> listBookmarkedPosts(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @Valid @ModelAttribute PostListReq req) {
+        return ResponseResult.success(postService.listBookmarkedPosts(userId, req.getLimit(), req.getCursor()));
+    }
+
     // ==================== Social Interaction Operations ====================
 
     /**
@@ -203,6 +232,21 @@ public class PostController {
             @PathVariable Long postId) {
         postService.like(userId, postId);
         return ResponseResult.success();
+    }
+
+    /**
+     * Check if the current user has liked a post.
+     *
+     * @param userId the authenticated user ID
+     * @param postId the post ID to check
+     * @return response containing isLiked status
+     */
+    @GetMapping("/{postId}/like/status")
+    public ResponseResult<Map<String, Boolean>> checkLike(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId) {
+        boolean isLiked = postService.isLiked(userId, postId);
+        return ResponseResult.success(Map.of("isLiked", isLiked));
     }
 
     /**
@@ -233,6 +277,21 @@ public class PostController {
             @PathVariable Long postId) {
         postService.bookmark(userId, postId);
         return ResponseResult.success();
+    }
+
+    /**
+     * Check if the current user has bookmarked a post.
+     *
+     * @param userId the authenticated user ID
+     * @param postId the post ID to check
+     * @return response containing isBookmarked status
+     */
+    @GetMapping("/{postId}/bookmark/status")
+    public ResponseResult<Map<String, Boolean>> checkBookmark(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long postId) {
+        boolean isBookmarked = postService.isBookmarked(userId, postId);
+        return ResponseResult.success(Map.of("isBookmarked", isBookmarked));
     }
 
     /**
@@ -318,5 +377,52 @@ public class PostController {
             @PathVariable Long rootCommentId,
             @Valid @ModelAttribute PostListReq req) {
         return ResponseResult.success(postService.listReplies(userId, rootCommentId, req.getLimit(), req.getCursor()));
+    }
+
+    // ==================== Comment Like Operations ====================
+
+    /**
+     * Like a comment.
+     *
+     * @param userId the authenticated user ID
+     * @param commentId the comment ID to like
+     * @return success response
+     */
+    @PostMapping("/comments/{commentId}/like")
+    public ResponseResult<Void> likeComment(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long commentId) {
+        postService.likeComment(userId, commentId);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Unlike a comment (remove like).
+     *
+     * @param userId the authenticated user ID
+     * @param commentId the comment ID to unlike
+     * @return success response
+     */
+    @DeleteMapping("/comments/{commentId}/like")
+    public ResponseResult<Void> unlikeComment(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long commentId) {
+        postService.unlikeComment(userId, commentId);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Check if the current user has liked a comment.
+     *
+     * @param userId the authenticated user ID
+     * @param commentId the comment ID to check
+     * @return response containing isLiked status
+     */
+    @GetMapping("/comments/{commentId}/like/status")
+    public ResponseResult<Map<String, Boolean>> checkCommentLike(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @PathVariable Long commentId) {
+        boolean isLiked = postService.isCommentLiked(userId, commentId);
+        return ResponseResult.success(Map.of("isLiked", isLiked));
     }
 }

@@ -19,6 +19,14 @@ public interface PostCommentMapper extends BaseMapper<PostComment> {
     int incReplyCount(@Param("id") Long id, @Param("delta") int delta);
 
     /**
+     * Increment like count for a comment.
+     * @param id the comment ID
+     * @param delta the increment value (can be negative)
+     * @return number of updated rows
+     */
+    int incLikeCount(@Param("id") Long id, @Param("delta") int delta);
+
+    /**
      * List root comments for a post with cursor-based pagination.
      * @param postId the post ID
      * @param cursorTimestamp cursor timestamp (nullable)

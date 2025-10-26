@@ -223,6 +223,7 @@ CREATE TABLE `post_comment` (
   `author_id` BIGINT(20) NOT NULL COMMENT 'Comment author user ID',
   `content` VARCHAR(1000) NOT NULL COMMENT 'Comment text',
   `reply_count` INT(11) NOT NULL DEFAULT 0 COMMENT 'Number of direct replies',
+  `like_count` INT(11) NOT NULL DEFAULT 0 COMMENT 'Number of likes',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `deleted_at` DATETIME DEFAULT NULL COMMENT 'Soft delete timestamp',
   PRIMARY KEY (`id`),
@@ -241,6 +242,16 @@ CREATE TABLE `post_like` (
   PRIMARY KEY (`post_id`, `user_id`),
   KEY `idx_like_user` (`user_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Post likes';
+
+-- Post comment likes
+DROP TABLE IF EXISTS `post_comment_like`;
+CREATE TABLE `post_comment_like` (
+  `comment_id` BIGINT(20) NOT NULL COMMENT 'Reference to post_comment.id',
+  `user_id` BIGINT(20) NOT NULL COMMENT 'User who liked',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`comment_id`, `user_id`),
+  KEY `idx_cmt_like_user` (`user_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Post comment likes';
 
 -- Post bookmarks
 DROP TABLE IF EXISTS `post_bookmark`;

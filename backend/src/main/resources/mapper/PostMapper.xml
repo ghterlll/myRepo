@@ -84,4 +84,22 @@
         LIMIT #{limit}
     </select>
 
+    <!-- List posts by author with cursor pagination (includes all statuses) -->
+    <select id="listByAuthor" resultMap="BaseResultMap">
+        SELECT id, title, author_id, caption, visibility, media_count,
+               category, geo_lat, geo_lon,
+               created_at, updated_at, deleted_at, status
+        FROM posts
+        WHERE author_id = #{authorId}
+          AND deleted_at IS NULL
+        <if test="cursorTimestamp != null">
+          AND (
+            created_at &lt; #{cursorTimestamp}
+            OR (created_at = #{cursorTimestamp} AND id &lt; #{cursorId})
+          )
+        </if>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

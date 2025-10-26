@@ -23,4 +23,17 @@
         WHERE user_id = #{userId} AND post_id = #{postId}
     </delete>
 
+    <!-- List bookmarked posts by user with cursor-based pagination -->
+    <select id="listByUser" resultMap="BaseResultMap">
+        SELECT post_id, user_id, created_at
+        FROM post_bookmark
+        WHERE user_id = #{userId}
+        <if test="cursorTimestamp != null">
+            AND (created_at &lt; #{cursorTimestamp}
+            OR (created_at = #{cursorTimestamp} AND post_id &lt; #{cursorId}))
+        </if>
+        ORDER BY created_at DESC, post_id DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

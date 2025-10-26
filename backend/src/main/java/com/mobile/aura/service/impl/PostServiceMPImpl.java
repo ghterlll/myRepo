@@ -37,8 +37,8 @@ public class PostServiceMPImpl implements PostService {
     private final PostLikeMapper likeMapper;
     private final PostBookmarkMapper bookmarkMapper;
     private final PostCommentMapper commentMapper;
+    private final CommentLikeMapper commentLikeMapper;
 
-    private final UserMapper userMapper;
     private final UserFollowMapper followMapper;
     private final UserBlockMapper blockMapper;
     private final UserSocialStatsMapper socialStatsMapper;
@@ -233,8 +233,12 @@ public class PostServiceMPImpl implements PostService {
                 .map(TagDtos.TagResp::getName)
                 .toList();
 
+        // Fetch statistics
+        PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                .orElse(PostStatistics.createForPost(postId));
+
         // Convert to response DTO using domain method
-        return p.toDetailResp(medias, tags);
+        return p.toDetailResp(medias, tags, stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount());
     }
 
     /**
@@ -251,9 +255,11 @@ public class PostServiceMPImpl implements PostService {
                 postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
                         .map(PostMedia::getUrl)
                         .orElse(null),
-                authorId -> Optional.ofNullable(userMapper.selectById(authorId))
-                        .map(user -> user.getNickname())
-                        .orElse("Unknown")
+                postId -> {
+                    PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                            .orElse(PostStatistics.createForPost(postId));
+                    return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                }
         );
     }
 
@@ -280,9 +286,11 @@ public class PostServiceMPImpl implements PostService {
                             postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
                                     .map(PostMedia::getUrl)
                                     .orElse(null),
-                            authorId -> Optional.ofNullable(userMapper.selectById(authorId))
-                                    .map(user -> user.getNickname())
-                                    .orElse("Unknown")
+                            postId -> {
+                                PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                                        .orElse(PostStatistics.createForPost(postId));
+                                return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                            }
                     );
                 })
                 .orElse(PageResponse.empty());
@@ -302,9 +310,33 @@ public class PostServiceMPImpl implements PostService {
                 postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
                         .map(PostMedia::getUrl)
                         .orElse(null),
-                authorId -> Optional.ofNullable(userMapper.selectById(authorId))
-                        .map(user -> user.getNickname())
-                        .orElse("Unknown")
+                postId -> {
+                    PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                            .orElse(PostStatistics.createForPost(postId));
+                    return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                }
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PageResponse<PostCardResp> listMyPosts(Long authorId, int limit, String cursor) {
+        Cursor parsedCursor = Cursor.parse(cursor);
+        List<Post> posts = postMapper.listByAuthor(authorId, parsedCursor.getTimestamp(), parsedCursor.getId(), limit + 1);
+
+        return Post.toCardsPageResponse(
+                posts,
+                limit,
+                postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
+                        .map(PostMedia::getUrl)
+                        .orElse(null),
+                postId -> {
+                    PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                            .orElse(PostStatistics.createForPost(postId));
+                    return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                }
         );
     }
 
@@ -363,6 +395,14 @@ public class PostServiceMPImpl implements PostService {
      * {@inheritDoc}
      */
     @Override
+    public boolean isLiked(Long uid, Long postId) {
+        return likeMapper.countLike(uid, postId) > 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     @Transactional
     public void bookmark(Long uid, Long postId) {
         mustReadablePost(uid, postId);
@@ -393,6 +433,55 @@ public class PostServiceMPImpl implements PostService {
 
         // Decrement bookmark count in statistics table
         PostStatistics.ensureUpdated(statisticsMapper.incBookmarkCount(postId, -1));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isBookmarked(Long uid, Long postId) {
+        return bookmarkMapper.countBookmark(uid, postId) > 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PageResponse<PostCardResp> listBookmarkedPosts(Long userId, int limit, String cursor) {
+        Cursor parsedCursor = Cursor.parse(cursor);
+        List<PostBookmark> bookmarks = bookmarkMapper.listByUser(userId, parsedCursor.formatTimestamp(), parsedCursor.getId(), limit + 1);
+
+        // Extract post IDs and fetch posts
+        List<Long> postIds = bookmarks.stream()
+                .map(PostBookmark::getPostId)
+                .toList();
+
+        return Optional.of(postIds)
+                .filter(ids -> !ids.isEmpty())
+                .map(ids -> {
+                    // Fetch posts by IDs (maintaining bookmark order)
+                    List<Post> posts = postMapper.selectBatchIds(ids).stream()
+                            .filter(post -> !post.isDeleted() && "public".equals(post.getVisibility()))
+                            .sorted((a, b) -> Integer.compare(
+                                    postIds.indexOf(a.getId()),
+                                    postIds.indexOf(b.getId())
+                            ))
+                            .toList();
+
+                    return Post.toCardsPageResponse(
+                            posts,
+                            limit,
+                            postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
+                                    .map(PostMedia::getUrl)
+                                    .orElse(null),
+                            postId -> {
+                                PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                                        .orElse(PostStatistics.createForPost(postId));
+                                return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                            }
+                    );
+                })
+                .orElse(PageResponse.empty());
     }
 
     /* --------------------- Comment Operations (Nested Comments) --------------------- */
@@ -497,5 +586,49 @@ public class PostServiceMPImpl implements PostService {
         List<PostComment> replies = commentMapper.listReplies(root.getPostId(), root.getId(), parsedCursor.formatTimestamp(), parsedCursor.getId(), limit + 1);
 
         return PostComment.toRepliesPageResponse(replies, limit);
+    }
+
+    /* --------------------- Comment Like Operations --------------------- */
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void likeComment(Long uid, Long commentId) {
+        PostComment comment = commentMapper.selectById(commentId);
+        comment.ensureExists();
+
+        // Ensure not already liked
+        CommentLike.ensureNotExists(commentLikeMapper.countLike(uid, commentId));
+
+        // Create and insert like
+        CommentLike like = CommentLike.create(uid, commentId);
+        commentLikeMapper.insert(like);
+
+        // Increment like count
+        PostComment.ensureUpdated(commentMapper.incLikeCount(commentId, 1));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void unlikeComment(Long uid, Long commentId) {
+        // Delete like and ensure it existed
+        int deletedCount = commentLikeMapper.deleteLike(uid, commentId);
+        CommentLike.ensureDeleted(deletedCount);
+
+        // Decrement like count
+        PostComment.ensureUpdated(commentMapper.incLikeCount(commentId, -1));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isCommentLiked(Long uid, Long commentId) {
+        return commentLikeMapper.countLike(uid, commentId) > 0;
     }
 }

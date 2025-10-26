@@ -248,9 +248,12 @@ public class Post {
      *
      * @param medias list of media items
      * @param tags list of tags
+     * @param likeCount number of likes
+     * @param commentCount number of comments
+     * @param bookmarkCount number of bookmarks
      * @return PostDetailResp DTO
      */
-    public PostDetailResp toDetailResp(List<MediaItem> medias, List<String> tags) {
+    public PostDetailResp toDetailResp(List<MediaItem> medias, List<String> tags, Integer likeCount, Integer commentCount, Integer bookmarkCount) {
         return new PostDetailResp(
                 this.id,
                 this.authorId,
@@ -260,7 +263,10 @@ public class Post {
                 tags,
                 medias,
                 this.createdAt == null ? null : FORMATTER.format(this.createdAt),
-                this.updatedAt == null ? null : FORMATTER.format(this.updatedAt)
+                this.updatedAt == null ? null : FORMATTER.format(this.updatedAt),
+                likeCount,
+                commentCount,
+                bookmarkCount
         );
     }
 
@@ -268,17 +274,21 @@ public class Post {
      * Convert this entity to PostCardResp DTO.
      *
      * @param coverUrl URL of the cover image
-     * @param authorNickname Nickname of the post author
+     * @param likeCount number of likes
+     * @param commentCount number of comments
+     * @param bookmarkCount number of bookmarks
      * @return PostCardResp DTO
      */
-    public PostCardResp toCardResp(String coverUrl, String authorNickname) {
+    public PostCardResp toCardResp(String coverUrl, Integer likeCount, Integer commentCount, Integer bookmarkCount) {
         return new PostCardResp(
                 this.id,
                 coverUrl,
                 this.authorId,
-                authorNickname,
                 this.title,
-                this.createdAt == null ? null : FORMATTER.format(this.createdAt)
+                this.createdAt == null ? null : FORMATTER.format(this.createdAt),
+                likeCount,
+                commentCount,
+                bookmarkCount
         );
     }
 
@@ -321,19 +331,24 @@ public class Post {
      * @param posts query results (limit + 1 items)
      * @param limit the page size limit
      * @param coverUrlProvider function to get cover URL for each post ID
-     * @param authorNicknameProvider function to get author nickname for each author ID
+     * @param statsProvider function to get statistics (likeCount, commentCount, bookmarkCount) for each post ID
      * @return PageResponse with post cards, cursor, and pagination metadata
      */
     public static PageResponse<PostCardResp> toCardsPageResponse(
             List<Post> posts,
             int limit,
             Function<Long, String> coverUrlProvider,
-            Function<Long, String> authorNicknameProvider) {
+            Function<Long, int[]> statsProvider) {
         List<PostCardResp> cards = posts.stream()
-                .map(post -> post.toCardResp(
-                        coverUrlProvider.apply(post.getId()),
-                        authorNicknameProvider.apply(post.getAuthorId())
-                ))
+                .map(post -> {
+                    int[] stats = statsProvider.apply(post.getId());
+                    return post.toCardResp(
+                            coverUrlProvider.apply(post.getId()),
+                            stats[0], // likeCount
+                            stats[1], // commentCount
+                            stats[2]  // bookmarkCount
+                    );
+                })
                 .toList();
 
         return PageResponse.paginate(

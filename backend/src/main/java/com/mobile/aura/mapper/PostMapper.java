@@ -55,4 +55,20 @@ public interface PostMapper extends BaseMapper<Post> {
             @Param("cursorId") Long cursorId,
             @Param("limit") int limit
     );
+
+    /**
+     * List posts by author (my posts) with cursor-based pagination.
+     * Includes all posts regardless of status.
+     * @param authorId author user ID
+     * @param cursorTimestamp cursor timestamp (nullable)
+     * @param cursorId cursor post ID (nullable)
+     * @param limit maximum number of results
+     * @return list of posts by the author
+     */
+    List<Post> listByAuthor(
+            @Param("authorId") Long authorId,
+            @Param("cursorTimestamp") LocalDateTime cursorTimestamp,
+            @Param("cursorId") Long cursorId,
+            @Param("limit") int limit
+    );
 }

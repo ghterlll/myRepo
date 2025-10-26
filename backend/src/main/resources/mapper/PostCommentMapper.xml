@@ -24,6 +24,13 @@
         WHERE id = #{id}
     </update>
 
+    <!-- Increment like count -->
+    <update id="incLikeCount">
+        UPDATE post_comment
+        SET like_count = GREATEST(0, like_count + #{delta})
+        WHERE id = #{id}
+    </update>
+
     <!-- List root comments with cursor pagination -->
     <select id="listRootComments" resultMap="BaseResultMap">
         SELECT id, post_id, author_id, root_id, parent_id, content, reply_count, created_at, deleted_at
