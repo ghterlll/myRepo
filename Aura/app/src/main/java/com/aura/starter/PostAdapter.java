@@ -1,8 +1,5 @@
 package com.aura.starter;
 
-import android.content.res.AssetManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,10 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.aura.starter.model.Post;
-import com.bumptech.glide.Glide;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import com.aura.starter.util.GlideUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,63 +35,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
         h.tvTitle.setText(p.title);
         h.tvAuthor.setText(p.author);
 
-        // Handle image display - Simplified logic with proper URL support
-        if (p.imageUri != null && !p.imageUri.isEmpty()){
-            // Priority 1: HTTP/HTTPS URLs (from MinIO or other web sources)
-            if (p.imageUri.startsWith("http://") || p.imageUri.startsWith("https://")) {
-                Glide.with(h.imgCover.getContext())
-                    .load(p.imageUri)
-                    .placeholder(R.drawable.placeholder)
-                    .error(R.drawable.placeholder)
-                    .into(h.imgCover);
-            }
-            // Priority 2: Local file paths
-            else if (p.imageUri.startsWith("/") || p.imageUri.startsWith("file://")) {
-                Glide.with(h.imgCover.getContext())
-                    .load(new File(p.imageUri.replace("file://", "")))
-                    .placeholder(R.drawable.placeholder)
-                    .error(R.drawable.placeholder)
-                    .into(h.imgCover);
-            }
-            // Priority 3: Assets images (imgX format)
-            else if (p.imageUri.startsWith("img") && p.imageUri.length() <= 5) {
-                try {
-                    AssetManager assetManager = h.imgCover.getContext().getAssets();
-                    InputStream inputStream = assetManager.open("images/" + p.imageUri + ".png");
-                    Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                    inputStream.close();
-                    if (bitmap != null) {
-                        Glide.with(h.imgCover.getContext())
-                            .load(bitmap)
-                            .placeholder(R.drawable.placeholder)
-                            .into(h.imgCover);
-                    } else {
-                        h.imgCover.setImageResource(R.drawable.placeholder);
-                    }
-                } catch (IOException e) {
-                    h.imgCover.setImageResource(R.drawable.placeholder);
-                }
-            }
-            // Priority 4: Resource IDs (numeric strings)
-            else {
-                try {
-                    int resourceId = Integer.parseInt(p.imageUri);
-                    Glide.with(h.imgCover.getContext())
-                        .load(resourceId)
-                        .placeholder(R.drawable.placeholder)
-                        .into(h.imgCover);
-                } catch (NumberFormatException e) {
-                    // Fallback: try as URL one more time
-                    Glide.with(h.imgCover.getContext())
-                        .load(p.imageUri)
-                        .placeholder(R.drawable.placeholder)
-                        .error(R.drawable.placeholder)
-                        .into(h.imgCover);
-                }
-            }
-        } else {
-            h.imgCover.setImageResource(R.drawable.placeholder);
-        }
+        // Handle image display using unified GlideUtils
+        GlideUtils.loadImage(h.imgCover.getContext(), p.imageUri, h.imgCover);
 
         h.itemView.setOnClickListener(v -> listener.onOpen(p));
         

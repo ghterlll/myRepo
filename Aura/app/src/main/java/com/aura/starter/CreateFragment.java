@@ -634,7 +634,7 @@ public class CreateFragment extends Fragment {
             uploadImageThenCreatePost(title, content, imagePath);
         } else {
             // No image, create post directly
-            createPostWithMedia(title, content, null);
+            createPostWithMedia(title, content, null, 0, 0);
         }
     }
 
@@ -665,12 +665,16 @@ public class CreateFragment extends Fragment {
             }
 
             final File finalImageFile = imageFile;
+
+            // Get image dimensions before upload
+            final int[] dimensions = getImageDimensions(finalImageFile);
+
             fileRepo.uploadPostImage(finalImageFile, new FileRepository.ResultCallback<FileUploadResponse>() {
                 @Override
                 public void onSuccess(FileUploadResponse response) {
                     // Image uploaded successfully, now create post with image URL
                     String imageUrl = response.getUrl();
-                    createPostWithMedia(title, content, imageUrl);
+                    createPostWithMedia(title, content, imageUrl, dimensions[0], dimensions[1]);
                 }
 
                 @Override
@@ -753,16 +757,31 @@ public class CreateFragment extends Fragment {
     }
 
     /**
-     * Create post with optional media URL
+     * Create post with optional media URL and dimensions
      */
-    private void createPostWithMedia(String title, String content, String imageUrl) {
+    private void createPostWithMedia(String title, String content, String imageUrl, int width, int height) {
+        // Validate image URL if provided
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            if (!isValidImageUrl(imageUrl)) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Invalid image URL received from server", Toast.LENGTH_SHORT).show();
+                    resetPublishButton();
+                });
+                return;
+            }
+        }
+
         // Build media list
         List<MediaItem> medias = null;
         if (imageUrl != null && !imageUrl.isEmpty()) {
             medias = new ArrayList<>();
             // MediaItem constructor: (String url, Integer width, Integer height)
-            // Using null for width/height as we don't have image dimensions yet
-            MediaItem mediaItem = new MediaItem(imageUrl, null, null);
+            // Use actual dimensions if available (width > 0), otherwise null
+            MediaItem mediaItem = new MediaItem(
+                imageUrl,
+                width > 0 ? width : null,
+                height > 0 ? height : null
+            );
             mediaItem.setSortOrder(0);
             medias.add(mediaItem);
         }
@@ -825,6 +844,36 @@ public class CreateFragment extends Fragment {
         // 重置图片预览状态
         updateImagePreviewState();
         isDraftLoaded = false;
+    }
+
+    /**
+     * Get image dimensions from file
+     * Returns [width, height], or [0, 0] if unable to read
+     */
+    private int[] getImageDimensions(File imageFile) {
+        int[] dimensions = new int[]{0, 0};
+        try {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true; // Only read dimensions, not the full bitmap
+            BitmapFactory.decodeFile(imageFile.getAbsolutePath(), options);
+            dimensions[0] = options.outWidth;
+            dimensions[1] = options.outHeight;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read image dimensions", e);
+        }
+        return dimensions;
+    }
+
+    /**
+     * Validate image URL format
+     * Check if URL is not empty and starts with http/https
+     */
+    private boolean isValidImageUrl(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            return false;
+        }
+        // Accept HTTP/HTTPS URLs or MinIO URLs
+        return url.startsWith("http://") || url.startsWith("https://");
     }
 
     @Override

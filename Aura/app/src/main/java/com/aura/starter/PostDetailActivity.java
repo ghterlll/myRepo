@@ -22,7 +22,8 @@ import com.aura.starter.data.AppRepository;
 import com.aura.starter.model.Post;
 import com.aura.starter.network.PostRepository;
 import com.aura.starter.network.models.CommentCreateRequest;
-import com.bumptech.glide.Glide;
+import com.aura.starter.util.GlideUtils;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 
@@ -218,16 +219,8 @@ public class PostDetailActivity extends AppCompatActivity {
         tvBookmarkCount.setText("9999+");
         tvCommentCount.setText("9999+");
 
-        // Load image - Direct URL loading for better compatibility
-        if (post.imageUri != null && !post.imageUri.isEmpty()){
-            Glide.with(this)
-                .load(post.imageUri)  // Load URL directly, Glide handles HTTP URLs properly
-                .placeholder(R.drawable.placeholder)
-                .error(R.drawable.placeholder)
-                .fitCenter()
-                .into(img);
-        } else {
-            img.setImageResource(R.drawable.placeholder);
-        }
+        // Load image using unified GlideUtils with fitCenter option
+        RequestOptions options = new RequestOptions().fitCenter();
+        GlideUtils.loadImageWithOptions(this, post.imageUri, img, options);
     }
 }
