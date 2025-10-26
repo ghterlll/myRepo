@@ -274,6 +274,23 @@ public class PostServiceMPImpl implements PostService {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PageResponse<PostCardResp> searchPublic(Long viewer, String keyword, String category, int limit, String cursor) {
+        Cursor parsedCursor = Cursor.parse(cursor);
+        List<Post> posts = postMapper.searchPublic(keyword, category, parsedCursor.getTimestamp(), parsedCursor.getId(), limit + 1);
+
+        return Post.toCardsPageResponse(
+                toPostsFilteringBlocks(viewer, posts),
+                limit,
+                postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
+                        .map(PostMedia::getUrl)
+                        .orElse(null)
+        );
+    }
+
+    /**
      * Filter posts to exclude blocked users.
      *
      * @param viewer the ID of the viewer

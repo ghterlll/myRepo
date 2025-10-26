@@ -173,6 +173,21 @@ public class PostController {
         return ResponseResult.success(postService.listFollowFeed(userId, req.getLimit(), req.getCursor()));
     }
 
+    /**
+     * Search public posts by keyword with optional category filter.
+     *
+     * @param userId the authenticated user ID
+     * @param req search request with keyword, category, limit, and cursor
+     * @return paginated response with post cards matching the search criteria
+     */
+    @GetMapping("/search")
+    public ResponseResult<PageResponse<PostCardResp>> search(
+            @RequestAttribute(ATTR_USER_ID) Long userId,
+            @Valid @ModelAttribute PostSearchReq req) {
+        return ResponseResult.success(postService.searchPublic(
+                userId, req.getKeyword(), req.getCategory(), req.getLimit(), req.getCursor()));
+    }
+
     // ==================== Social Interaction Operations ====================
 
     /**

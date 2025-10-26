@@ -100,6 +100,18 @@ public interface PostService {
      */
     PageResponse<PostCardResp> listFollowFeed(Long viewer, int limit, String cursor);
 
+    /**
+     * Search public posts by keyword with optional category filter.
+     *
+     * @param viewer the ID of the user viewing the search results
+     * @param keyword search keyword (searches in title and caption)
+     * @param category category filter (optional, can be null)
+     * @param limit maximum number of posts to return (1-100)
+     * @param cursor pagination cursor (format: "timestamp|id")
+     * @return paginated response with post cards matching the search criteria
+     */
+    PageResponse<PostCardResp> searchPublic(Long viewer, String keyword, String category, int limit, String cursor);
+
     // ========= Like Operations =========
 
     /**

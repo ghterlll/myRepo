@@ -38,4 +38,21 @@ public interface PostMapper extends BaseMapper<Post> {
             @Param("cursorId") Long cursorId,
             @Param("limit") int limit
     );
+
+    /**
+     * Search public posts by keyword with cursor-based pagination.
+     * @param keyword search keyword (searches in title and caption)
+     * @param category category filter (nullable)
+     * @param cursorTimestamp cursor timestamp (nullable)
+     * @param cursorId cursor post ID (nullable)
+     * @param limit maximum number of results
+     * @return list of posts matching the search criteria
+     */
+    List<Post> searchPublic(
+            @Param("keyword") String keyword,
+            @Param("category") String category,
+            @Param("cursorTimestamp") LocalDateTime cursorTimestamp,
+            @Param("cursorId") Long cursorId,
+            @Param("limit") int limit
+    );
 }
