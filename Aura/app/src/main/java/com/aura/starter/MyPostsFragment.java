@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import com.aura.starter.model.Post;
+import com.aura.starter.network.AuthManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,10 +24,15 @@ public class MyPostsFragment extends Fragment {
     private FeedViewModel vm;
     private List<Post> current = new ArrayList<>();
     private PostAdapter adapter;
+    private Long currentUserId;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle s){
         View v = inf.inflate(R.layout.fragment_list_posts, c, false);
         vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
+
+        // Get current user ID from AuthManager
+        AuthManager authManager = new AuthManager(requireContext());
+        currentUserId = authManager.getUserId();
 
         RecyclerView r = v.findViewById(R.id.recycler);
         r.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
@@ -56,11 +62,23 @@ public class MyPostsFragment extends Fragment {
         sortTime.setOnClickListener(btn -> sortByTime());
         sortLikes.setOnClickListener(btn -> sortByLikes());
 
-        // For now, observe all posts and filter for current user
-        // TODO: Add backend API to get posts by user ID
+        // Filter posts by current user's authorId
         vm.getDisplayedPosts().observe(getViewLifecycleOwner(), all -> {
             List<Post> list = new ArrayList<>();
-            if (all != null) for (Post p : all) if ("You".equals(p.author)) list.add(p);
+            if (all != null && currentUserId != null) {
+                for (Post p : all) {
+                    // Parse author from "UserXXX" format and compare with currentUserId
+                    String authorIdStr = p.author.replace("User", "");
+                    try {
+                        Long authorId = Long.parseLong(authorIdStr);
+                        if (authorId.equals(currentUserId)) {
+                            list.add(p);
+                        }
+                    } catch (NumberFormatException e) {
+                        // Skip posts with invalid author format
+                    }
+                }
+            }
             current = list;
             sortByTime();
         });
