@@ -20,11 +20,6 @@ public interface FileStorageService {
     FileUploadResult uploadPostImage(Long userId, MultipartFile file);
 
     /**
-     * Upload post video
-     */
-    FileUploadResult uploadPostVideo(Long userId, MultipartFile file);
-
-    /**
      * Batch upload post images
      */
     List<FileUploadResult> uploadPostImagesBatch(Long userId, MultipartFile[] files);

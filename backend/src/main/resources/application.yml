@@ -8,6 +8,10 @@ spring:
     username: root
     password: ${DB_PASSWORD:12345678}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
   mail:
     host: smtp.qq.com
     port: 465
