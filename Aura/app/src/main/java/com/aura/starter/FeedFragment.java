@@ -202,18 +202,18 @@ public class FeedFragment extends Fragment {
      * Setup search bar functionality
      */
     private void setupSearchBar(View view) {
-        TextInputEditText etSearch = view.findViewById(R.id.etSearch);
+        View searchBar = view.findViewById(R.id.searchBar);
 
         // Add click listener to open search page
-        etSearch.setOnClickListener(v -> {
+        searchBar.setOnClickListener(v -> {
             // Navigate to search activity
             Intent intent = new Intent(requireContext(), SearchActivity.class);
             startActivity(intent);
 
             // Add visual feedback (optional)
             v.animate()
-                .scaleX(0.95f)
-                .scaleY(0.95f)
+                .scaleX(0.98f)
+                .scaleY(0.98f)
                 .setDuration(100)
                 .withEndAction(() -> {
                     v.animate()
