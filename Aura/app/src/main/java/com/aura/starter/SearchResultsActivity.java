@@ -40,6 +40,7 @@ public class SearchResultsActivity extends AppCompatActivity {
     private String currentCursor = null;
     private boolean hasMorePages = true;
     private boolean isLoading = false;
+    private List<Post> currentPosts = new ArrayList<>();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -147,10 +148,7 @@ public class SearchResultsActivity extends AppCompatActivity {
             @Override
             public void onSuccess(PageResponse<PostCardResponse> response) {
                 runOnUiThread(() -> {
-                    List<Post> currentPosts = adapter.getData();
-                    if (currentPosts == null) currentPosts = new ArrayList<>();
-
-                    // Convert and append new posts
+                    // Append to existing posts
                     for (PostCardResponse postCard : response.getItems()) {
                         Post post = new Post(
                             postCard.getId().toString(),
@@ -227,14 +225,13 @@ public class SearchResultsActivity extends AppCompatActivity {
         isLoading = true;
         currentCursor = null;
         hasMorePages = true;
+        currentPosts.clear(); // Clear previous search results
 
         // Search posts using backend API
         postRepo.searchPosts(searchQuery, null, 20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
             @Override
             public void onSuccess(PageResponse<PostCardResponse> response) {
                 runOnUiThread(() -> {
-                    List<Post> searchResults = new ArrayList<>();
-
                     // Convert PostCardResponse to Post model
                     for (PostCardResponse postCard : response.getItems()) {
                         Post post = new Post(
@@ -245,7 +242,7 @@ public class SearchResultsActivity extends AppCompatActivity {
                             "", // TODO: Get tags from backend
                             postCard.getCoverUrl()
                         );
-                        searchResults.add(post);
+                        currentPosts.add(post);
                     }
 
                     // Update pagination state
@@ -253,7 +250,7 @@ public class SearchResultsActivity extends AppCompatActivity {
                     hasMorePages = response.getHasMore();
                     isLoading = false;
 
-                    updateResults(searchResults);
+                    updateResults(currentPosts);
                 });
             }
 

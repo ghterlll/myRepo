@@ -89,9 +89,7 @@ public class CommentsActivity extends AppCompatActivity {
             // Send comment to backend
             try {
                 Long postIdLong = Long.parseLong(postId);
-                CommentCreateRequest request = new CommentCreateRequest();
-                request.setContent(content);
-                request.setParentId(null); // Root comment
+                CommentCreateRequest request = new CommentCreateRequest(content, null); // Root comment
 
                 postRepo.createComment(postIdLong, request, new PostRepository.ResultCallback<Map<String, Long>>() {
                     @Override
@@ -141,7 +139,7 @@ public class CommentsActivity extends AppCompatActivity {
 
                         // Convert CommentThreadResponse to Comment model
                         for (CommentThreadResponse thread : response.getItems()) {
-                            CommentResponse root = thread.getRootComment();
+                            CommentResponse root = thread.getRoot();
                             Comment comment = new Comment(
                                 root.getId().toString(),
                                 postId,

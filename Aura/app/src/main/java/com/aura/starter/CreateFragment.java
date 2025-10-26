@@ -725,10 +725,10 @@ public class CreateFragment extends Fragment {
         List<MediaItem> medias = null;
         if (imageUrl != null && !imageUrl.isEmpty()) {
             medias = new ArrayList<>();
-            MediaItem mediaItem = new MediaItem();
-            mediaItem.setType("image");
-            mediaItem.setUrl(imageUrl);
-            mediaItem.setDisplayOrder(0);
+            // MediaItem constructor: (String url, Integer width, Integer height)
+            // Using null for width/height as we don't have image dimensions yet
+            MediaItem mediaItem = new MediaItem(imageUrl, null, null);
+            mediaItem.setSortOrder(0);
             medias.add(mediaItem);
         }
 
