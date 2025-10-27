@@ -117,6 +117,7 @@ public class ProfileFragment extends Fragment {
         ViewPager2 pager = viewPagerWrapper.getViewPager2();
         TabLayout tabs = v.findViewById(R.id.tabLayout);
         pager.setAdapter(new ProfilePagerAdapter(this));
+        pager.setOffscreenPageLimit(2);
         new TabLayoutMediator(tabs, pager, (tab, pos) -> {
             tab.setText(pos==0 ? getString(R.string.tab_posts) : getString(R.string.tab_bookmarks));
         }).attach();
