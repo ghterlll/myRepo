@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.aura.starter.R;
 import com.aura.starter.data.ProfileRepository;
 import com.aura.starter.model.Post;
 import com.aura.starter.model.UserProfile;
