@@ -73,9 +73,46 @@ public class MyPostsFragment extends Fragment {
         sortTime.setOnClickListener(btn -> sortByTime());
         sortLikes.setOnClickListener(btn -> sortByLikes());
 
+        // Setup scroll listener for load more
+        setupScrollListener(r);
+
         // Load my posts from backend API
         loadMyPosts();
         return v;
+    }
+
+    private void setupScrollListener(RecyclerView recyclerView) {
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                if (isLoading || !hasMorePages) return;
+
+                StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
+                if (layoutManager == null) return;
+
+                int[] lastVisibleItemPositions = layoutManager.findLastVisibleItemPositions(null);
+                int lastVisibleItemPosition = getMaxPosition(lastVisibleItemPositions);
+
+                int totalItemCount = layoutManager.getItemCount();
+
+                // Load more when user scrolls to near the end
+                if (lastVisibleItemPosition >= totalItemCount - 3) {
+                    loadMyPosts();
+                }
+            }
+        });
+    }
+
+    private int getMaxPosition(int[] positions) {
+        int max = positions[0];
+        for (int position : positions) {
+            if (position > max) {
+                max = position;
+            }
+        }
+        return max;
     }
 
     private void loadMyPosts() {

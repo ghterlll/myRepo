@@ -189,7 +189,7 @@ public class BookmarksFragment extends Fragment {
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                if (isLoading || !vm.hasMorePages()) return;
+                if (isLoading || !hasMorePages) return;
 
                 StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
                 if (layoutManager == null) return;
@@ -201,7 +201,7 @@ public class BookmarksFragment extends Fragment {
 
                 // Load more when user scrolls to near the end
                 if (lastVisibleItemPosition >= totalItemCount - 3) {
-                    loadMorePosts();
+                    loadBookmarkedPosts();
                 }
             }
         });
@@ -215,26 +215,6 @@ public class BookmarksFragment extends Fragment {
             }
         }
         return max;
-    }
-
-    private void loadMorePosts() {
-        if (isLoading || !vm.hasMorePages()) return;
-
-        isLoading = true;
-
-        // Simulate loading delay
-        executor.execute(() -> {
-            try {
-                Thread.sleep(500); // Simulate network delay
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            mainHandler.post(() -> {
-                vm.loadMorePosts();
-                isLoading = false;
-            });
-        });
     }
 
     private void setupSortingButtons(View v) {
