@@ -45,7 +45,11 @@ public class MyPostsFragment extends Fragment {
         // Get current user ID from AuthManager
         AuthManager authManager = new AuthManager(requireContext());
         currentUserId = authManager.getUserId();
+        android.util.Log.d("MyPostsFragment", "=== AUTHENTICATION STATUS ===");
         android.util.Log.d("MyPostsFragment", "Current logged-in userId: " + currentUserId);
+        android.util.Log.d("MyPostsFragment", "Access token: " + (authManager.getAccessToken() != null ? "EXISTS" : "NULL"));
+        android.util.Log.d("MyPostsFragment", "Is logged in: " + authManager.isLoggedIn());
+        android.util.Log.d("MyPostsFragment", "============================");
 
         RecyclerView r = v.findViewById(R.id.recycler);
         r.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
