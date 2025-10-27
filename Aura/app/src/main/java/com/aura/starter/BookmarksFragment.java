@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.aura.starter.model.Post;
+import com.aura.starter.network.AuthManager;
 import com.aura.starter.network.PostRepository;
 import com.aura.starter.network.models.PageResponse;
 import com.aura.starter.network.models.PostCardResponse;
@@ -45,6 +46,15 @@ public class BookmarksFragment extends Fragment {
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle s){
         android.util.Log.d("BookmarksFragment", ">>> onCreateView called <<<");
+
+        // Check login status
+        AuthManager authManager = new AuthManager(requireContext());
+        if (!authManager.isLoggedIn()) {
+            android.util.Log.w("BookmarksFragment", "User not logged in, skipping data load");
+            // Return empty view without loading data
+            return inf.inflate(R.layout.fragment_list_posts, c, false);
+        }
+
         View v = inf.inflate(R.layout.fragment_list_posts, c, false);
         vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
         postRepo = PostRepository.getInstance();

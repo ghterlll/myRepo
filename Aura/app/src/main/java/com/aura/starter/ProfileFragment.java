@@ -51,6 +51,14 @@ public class ProfileFragment extends Fragment {
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        // Check login status first
+        AuthManager authManager = new AuthManager(requireContext());
+        if (!authManager.isLoggedIn()) {
+            showLoginRequiredDialog();
+            // Return empty view to prevent loading
+            return inflater.inflate(R.layout.fragment_profile, container, false);
+        }
+
         View v = inflater.inflate(R.layout.fragment_profile, container, false);
         FeedViewModel vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
         profileRepo = ProfileRepository.get(requireContext());
@@ -262,5 +270,29 @@ public class ProfileFragment extends Fragment {
         requireActivity().finish();
 
         Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Show modern login required dialog
+     */
+    private void showLoginRequiredDialog() {
+        if (getContext() == null) return;
+
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Login Required")
+            .setMessage("Please login to access your profile and personalized content.")
+            .setPositiveButton("Go to Login", (dialog, which) -> {
+                // Navigate to login activity
+                Intent intent = new Intent(requireActivity(), LoginActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                requireActivity().finish();
+            })
+            .setNegativeButton("Cancel", (dialog, which) -> {
+                // User chose not to login, do nothing
+                dialog.dismiss();
+            })
+            .setCancelable(false)
+            .show();
     }
 }
