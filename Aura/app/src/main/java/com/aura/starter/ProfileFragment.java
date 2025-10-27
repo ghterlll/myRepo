@@ -113,7 +113,8 @@ public class ProfileFragment extends Fragment {
         v.findViewById(R.id.theme3).setOnClickListener(vw -> profileRepo.setTheme(3));
 
         // Tabs + pager
-        ViewPager2 pager = v.findViewById(R.id.viewPager);
+        com.aura.starter.util.WrapContentViewPager2 viewPagerWrapper = v.findViewById(R.id.viewPager);
+        ViewPager2 pager = viewPagerWrapper.getViewPager2();
         TabLayout tabs = v.findViewById(R.id.tabLayout);
         pager.setAdapter(new ProfilePagerAdapter(this));
         new TabLayoutMediator(tabs, pager, (tab, pos) -> {
