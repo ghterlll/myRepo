@@ -37,6 +37,7 @@ public class MyPostsFragment extends Fragment {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle s){
+        android.util.Log.d("MyPostsFragment", ">>> onCreateView called <<<");
         View v = inf.inflate(R.layout.fragment_list_posts, c, false);
         vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
         postRepo = PostRepository.getInstance();
@@ -44,6 +45,7 @@ public class MyPostsFragment extends Fragment {
         // Get current user ID from AuthManager
         AuthManager authManager = new AuthManager(requireContext());
         currentUserId = authManager.getUserId();
+        android.util.Log.d("MyPostsFragment", "Current logged-in userId: " + currentUserId);
 
         RecyclerView r = v.findViewById(R.id.recycler);
         r.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
@@ -116,36 +118,64 @@ public class MyPostsFragment extends Fragment {
     }
 
     private void loadMyPosts() {
-        if (isLoading) return;
+        if (isLoading) {
+            android.util.Log.d("MyPostsFragment", "Already loading, skipping");
+            return;
+        }
+
+        android.util.Log.d("MyPostsFragment", "=== START loadMyPosts ===");
+        android.util.Log.d("MyPostsFragment", "Current userId: " + currentUserId);
+        android.util.Log.d("MyPostsFragment", "Current cursor: " + currentCursor);
 
         isLoading = true;
         postRepo.listMyPosts(20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
             @Override
             public void onSuccess(PageResponse<PostCardResponse> response) {
                 mainHandler.post(() -> {
+                    android.util.Log.d("MyPostsFragment", "API Response received:");
+                    android.util.Log.d("MyPostsFragment", "  - Items count: " + (response.getItems() != null ? response.getItems().size() : 0));
+                    android.util.Log.d("MyPostsFragment", "  - Next cursor: " + response.getNextCursor());
+                    android.util.Log.d("MyPostsFragment", "  - Has more: " + response.getHasMore());
+
+                    if (response.getItems() != null) {
+                        for (int i = 0; i < response.getItems().size(); i++) {
+                            PostCardResponse item = response.getItems().get(i);
+                            android.util.Log.d("MyPostsFragment", "  Post " + i + ": id=" + item.getId() +
+                                ", authorId=" + item.getAuthorId() +
+                                ", title=" + item.getTitle());
+                        }
+                    }
+
                     List<Post> newPosts = convertPostCardResponseToPosts(response.getItems());
+                    android.util.Log.d("MyPostsFragment", "Converted " + newPosts.size() + " posts");
 
                     if (currentCursor == null) {
                         // Initial load
+                        android.util.Log.d("MyPostsFragment", "Initial load - clearing current list");
                         current.clear();
                         current.addAll(newPosts);
                     } else {
                         // Load more
+                        android.util.Log.d("MyPostsFragment", "Load more - appending to current list");
                         current.addAll(newPosts);
                     }
+
+                    android.util.Log.d("MyPostsFragment", "Total posts in current list: " + current.size());
 
                     currentCursor = response.getNextCursor();
                     hasMorePages = response.getHasMore();
                     isLoading = false;
 
                     sortByTime();
+                    android.util.Log.d("MyPostsFragment", "=== END loadMyPosts SUCCESS ===");
                 });
             }
 
             @Override
             public void onError(String message) {
                 mainHandler.post(() -> {
-                    android.util.Log.e("MyPostsFragment", "Load my posts failed: " + message);
+                    android.util.Log.e("MyPostsFragment", "=== loadMyPosts FAILED ===");
+                    android.util.Log.e("MyPostsFragment", "Error: " + message);
                     isLoading = false;
                 });
             }
@@ -180,6 +210,11 @@ public class MyPostsFragment extends Fragment {
         Collections.sort(sorted, new Comparator<Post>() {
             @Override public int compare(Post a, Post b) { return Long.compare(b.createdAt, a.createdAt); }
         });
+        android.util.Log.d("MyPostsFragment", "sortByTime - displaying " + sorted.size() + " posts");
+        for (int i = 0; i < Math.min(sorted.size(), 5); i++) {
+            Post p = sorted.get(i);
+            android.util.Log.d("MyPostsFragment", "  Display " + i + ": id=" + p.id + ", author=" + p.author + ", title=" + p.title);
+        }
         adapter.submit(sorted);
     }
     private void sortByLikes(){
@@ -187,6 +222,11 @@ public class MyPostsFragment extends Fragment {
         Collections.sort(sorted, new Comparator<Post>() {
             @Override public int compare(Post a, Post b) { return Integer.compare(b.likes, a.likes); }
         });
+        android.util.Log.d("MyPostsFragment", "sortByLikes - displaying " + sorted.size() + " posts");
+        for (int i = 0; i < Math.min(sorted.size(), 5); i++) {
+            Post p = sorted.get(i);
+            android.util.Log.d("MyPostsFragment", "  Display " + i + ": id=" + p.id + ", author=" + p.author + ", title=" + p.title);
+        }
         adapter.submit(sorted);
     }
 }

@@ -44,6 +44,7 @@ public class BookmarksFragment extends Fragment {
     private PostInteractionManager interactionManager;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle s){
+        android.util.Log.d("BookmarksFragment", ">>> onCreateView called <<<");
         View v = inf.inflate(R.layout.fragment_list_posts, c, false);
         vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
         postRepo = PostRepository.getInstance();
@@ -73,36 +74,63 @@ public class BookmarksFragment extends Fragment {
     }
 
     private void loadBookmarkedPosts() {
-        if (isLoading) return;
+        if (isLoading) {
+            android.util.Log.d("BookmarksFragment", "Already loading, skipping");
+            return;
+        }
+
+        android.util.Log.d("BookmarksFragment", "=== START loadBookmarkedPosts ===");
+        android.util.Log.d("BookmarksFragment", "Current cursor: " + currentCursor);
 
         isLoading = true;
         postRepo.listBookmarkedPosts(20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
             @Override
             public void onSuccess(PageResponse<PostCardResponse> response) {
                 mainHandler.post(() -> {
+                    android.util.Log.d("BookmarksFragment", "API Response received:");
+                    android.util.Log.d("BookmarksFragment", "  - Items count: " + (response.getItems() != null ? response.getItems().size() : 0));
+                    android.util.Log.d("BookmarksFragment", "  - Next cursor: " + response.getNextCursor());
+                    android.util.Log.d("BookmarksFragment", "  - Has more: " + response.getHasMore());
+
+                    if (response.getItems() != null) {
+                        for (int i = 0; i < response.getItems().size(); i++) {
+                            PostCardResponse item = response.getItems().get(i);
+                            android.util.Log.d("BookmarksFragment", "  Bookmark " + i + ": id=" + item.getId() +
+                                ", authorId=" + item.getAuthorId() +
+                                ", title=" + item.getTitle());
+                        }
+                    }
+
                     List<Post> newPosts = convertPostCardResponseToPosts(response.getItems());
+                    android.util.Log.d("BookmarksFragment", "Converted " + newPosts.size() + " bookmarked posts");
 
                     if (currentCursor == null) {
                         // Initial load
+                        android.util.Log.d("BookmarksFragment", "Initial load - clearing current list");
                         current.clear();
                         current.addAll(newPosts);
                     } else {
                         // Load more
+                        android.util.Log.d("BookmarksFragment", "Load more - appending to current list");
                         current.addAll(newPosts);
                     }
+
+                    android.util.Log.d("BookmarksFragment", "Total bookmarks in current list: " + current.size());
 
                     currentCursor = response.getNextCursor();
                     hasMorePages = response.getHasMore();
                     isLoading = false;
 
                     sortByTime();
+                    android.util.Log.d("BookmarksFragment", "=== END loadBookmarkedPosts SUCCESS ===");
                 });
             }
 
             @Override
             public void onError(String message) {
                 mainHandler.post(() -> {
-                    android.util.Log.e("BookmarksFragment", "Load bookmarks failed: " + message);
+                    android.util.Log.e("BookmarksFragment", "=== loadBookmarkedPosts FAILED ===");
+                    android.util.Log.e("BookmarksFragment", "Error: " + message);
                     isLoading = false;
                     if (swipeRefreshLayout != null) {
                         swipeRefreshLayout.setRefreshing(false);
@@ -229,6 +257,11 @@ public class BookmarksFragment extends Fragment {
         Collections.sort(sorted, new Comparator<Post>() {
             @Override public int compare(Post a, Post b) { return Long.compare(b.createdAt, a.createdAt); }
         });
+        android.util.Log.d("BookmarksFragment", "sortByTime - displaying " + sorted.size() + " bookmarked posts");
+        for (int i = 0; i < Math.min(sorted.size(), 5); i++) {
+            Post p = sorted.get(i);
+            android.util.Log.d("BookmarksFragment", "  Display " + i + ": id=" + p.id + ", author=" + p.author + ", title=" + p.title + ", bookmarked=" + p.bookmarked);
+        }
         adapter.submit(sorted);
     }
     private void sortByLikes(){
@@ -236,6 +269,11 @@ public class BookmarksFragment extends Fragment {
         Collections.sort(sorted, new Comparator<Post>() {
             @Override public int compare(Post a, Post b) { return Integer.compare(b.likes, a.likes); }
         });
+        android.util.Log.d("BookmarksFragment", "sortByLikes - displaying " + sorted.size() + " bookmarked posts");
+        for (int i = 0; i < Math.min(sorted.size(), 5); i++) {
+            Post p = sorted.get(i);
+            android.util.Log.d("BookmarksFragment", "  Display " + i + ": id=" + p.id + ", author=" + p.author + ", title=" + p.title + ", bookmarked=" + p.bookmarked);
+        }
         adapter.submit(sorted);
     }
 
