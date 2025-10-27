@@ -24,12 +24,16 @@ import com.aura.starter.data.ProfileRepository;
 import com.aura.starter.model.Post;
 import com.aura.starter.model.UserProfile;
 import com.aura.starter.network.AuthManager;
+import com.aura.starter.network.UserRepository;
+import com.aura.starter.network.models.UserStatisticsResponse;
+import com.aura.starter.network.models.UserProfileResponse;
 import com.bumptech.glide.Glide;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class ProfileFragment extends Fragment {
     private ProfileRepository profileRepo;
+    private UserRepository userRepo = UserRepository.getInstance();
     private ImageView imgAvatar, imgCover;
     private View header;
 
@@ -52,9 +56,10 @@ public class ProfileFragment extends Fragment {
 
         TextView tvName = v.findViewById(R.id.tvName);
         TextView tvBio = v.findViewById(R.id.tvBio);
+        TextView tvDays = v.findViewById(R.id.tvStatDays);
+        TextView tvMeals = v.findViewById(R.id.tvStatMeals);
+        TextView tvHealthy = v.findViewById(R.id.tvStatHealthy);
         TextView tvPosts = v.findViewById(R.id.tvStatPosts);
-        TextView tvLikes = v.findViewById(R.id.tvStatLikes);
-        TextView tvPoints = v.findViewById(R.id.tvStatPoints);
         ImageView btnEdit = v.findViewById(R.id.btnEdit);
         ImageView btnIG = v.findViewById(R.id.btnIG);
         ImageView btnXHS = v.findViewById(R.id.btnXHS);
@@ -62,19 +67,13 @@ public class ProfileFragment extends Fragment {
         imgCover = v.findViewById(R.id.imgCover);
         header = v.findViewById(R.id.header);
 
-        tvPoints.setText(String.valueOf(vm.getPoints()));
-        vm.getPosts().observe(getViewLifecycleOwner(), posts -> {
-            int postCount = 0;
-            int likes = 0;
-            if (posts != null) {
-                postCount = posts.size();
-                for (Post p : posts) likes += p.likes;
-            }
-            tvPosts.setText(String.valueOf(postCount));
-            tvLikes.setText(String.valueOf(likes));
-        });
+        // Load statistics from backend API
+        loadStatisticsFromBackend(tvDays, tvMeals, tvHealthy, tvPosts);
 
-        // Observe profile
+        // Load profile from backend API first, then observe local changes
+        loadProfileFromBackend(tvName, tvBio);
+        
+        // Observe profile for local changes
         profileRepo.profile().observe(getViewLifecycleOwner(), p -> bindProfile(p, tvName, tvBio));
 
         // Edit dialog
@@ -117,6 +116,7 @@ public class ProfileFragment extends Fragment {
         ViewPager2 pager = v.findViewById(R.id.viewPager);
         TabLayout tabs = v.findViewById(R.id.tabLayout);
         pager.setAdapter(new ProfilePagerAdapter(this));
+        pager.setOffscreenPageLimit(2); // Preload both tabs immediately
         new TabLayoutMediator(tabs, pager, (tab, pos) -> {
             tab.setText(pos==0 ? getString(R.string.tab_posts) : getString(R.string.tab_bookmarks));
         }).attach();
@@ -183,16 +183,83 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
     
+    /**
+     * Load user profile from backend API
+     */
+    private void loadProfileFromBackend(TextView tvName, TextView tvBio) {
+        userRepo.getMyProfile(new UserRepository.ResultCallback<UserProfileResponse>() {
+            @Override
+            public void onSuccess(UserProfileResponse profile) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // Update local repository with backend data
+                        if (profile.getNickname() != null) {
+                            profileRepo.setName(profile.getNickname());
+                        }
+                        if (profile.getBio() != null) {
+                            profileRepo.setBio(profile.getBio());
+                        }
+                        if (profile.getAvatarUrl() != null) {
+                            profileRepo.setAvatar(profile.getAvatarUrl());
+                        }
+                        
+                        // UI will be updated through observer
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                // Silently fail and use local data
+                android.util.Log.e("ProfileFragment", "Failed to load profile: " + message);
+            }
+        });
+    }
+
+    /**
+     * Load user statistics from backend API
+     */
+    private void loadStatisticsFromBackend(TextView tvDays, TextView tvMeals, TextView tvHealthy, TextView tvPosts) {
+        userRepo.getMyStatistics(new UserRepository.ResultCallback<UserStatisticsResponse>() {
+            @Override
+            public void onSuccess(UserStatisticsResponse stats) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // Update all four statistics
+                        if (stats.getJoinedDays() != null) {
+                            tvDays.setText(String.valueOf(stats.getJoinedDays()));
+                        }
+                        if (stats.getMealCount() != null) {
+                            tvMeals.setText(String.valueOf(stats.getMealCount()));
+                        }
+                        if (stats.getHealthyDays() != null) {
+                            tvHealthy.setText(String.valueOf(stats.getHealthyDays()));
+                        }
+                        if (stats.getPostCount() != null) {
+                            tvPosts.setText(String.valueOf(stats.getPostCount()));
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                // Silently fail and keep default values
+                android.util.Log.e("ProfileFragment", "Failed to load statistics: " + message);
+            }
+        });
+    }
+
     private void logout() {
         AuthManager authManager = new AuthManager(requireContext());
         authManager.logout();
-        
+
         // Redirect to login
         Intent intent = new Intent(requireActivity(), LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         requireActivity().finish();
-        
+
         Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show();
     }
 }

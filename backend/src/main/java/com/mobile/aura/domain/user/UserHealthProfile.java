@@ -1,5 +1,6 @@
 package com.mobile.aura.domain.user;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mobile.aura.constant.CommonStatusEnum;
@@ -34,7 +35,7 @@ import java.util.stream.Collectors;
 @TableName("user_health_profile")
 public class UserHealthProfile {
 
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     private Long userId;
@@ -69,6 +70,22 @@ public class UserHealthProfile {
                 .initialWeightAt(recordDate)
                 .latestWeightKg(weightKg)
                 .latestWeightAt(recordDate)
+                .build();
+    }
+
+    /**
+     * Create empty health profile for new user registration.
+     * All fields are null except userId and timestamps.
+     *
+     * @param userId user ID
+     * @return new empty health profile instance
+     */
+    public static UserHealthProfile createForUser(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+        return UserHealthProfile.builder()
+                .userId(userId)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
     }
 

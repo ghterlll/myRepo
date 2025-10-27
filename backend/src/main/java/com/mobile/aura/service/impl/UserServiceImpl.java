@@ -14,6 +14,7 @@ import com.mobile.aura.domain.health.StepCount;
 import com.mobile.aura.domain.user.User;
 import com.mobile.aura.domain.user.UserHealthProfile;
 import com.mobile.aura.domain.user.UserProfile;
+import com.mobile.aura.domain.user.UserSocialStats;
 import com.mobile.aura.dto.user.ResetPasswordReq;
 import com.mobile.aura.dto.user.UserDtos.*;
 import com.mobile.aura.mapper.ExerciseLogMapper;
@@ -23,6 +24,7 @@ import com.mobile.aura.mapper.StepCountMapper;
 import com.mobile.aura.mapper.UserHealthProfileMapper;
 import com.mobile.aura.mapper.UserMapper;
 import com.mobile.aura.mapper.UserProfileMapper;
+import com.mobile.aura.mapper.UserSocialStatsMapper;
 import com.mobile.aura.service.EmailCodeService;
 import com.mobile.aura.service.GeoLocationService;
 import com.mobile.aura.service.UserService;
@@ -48,6 +50,7 @@ public class UserServiceImpl implements UserService {
     private final EmailCodeService emailCodeService;
     private final UserProfileMapper userProfileMapper;
     private final UserHealthProfileMapper healthProfileMapper;
+    private final UserSocialStatsMapper socialStatsMapper;
     private final MealLogMapper mealLogMapper;
     private final ExerciseLogMapper exerciseLogMapper;
     private final StepCountMapper stepCountMapper;
@@ -97,7 +100,8 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * Create user profile, ignoring duplicate key conflicts
+     * Create user profile, health profile, and social stats.
+     * Ignores duplicate key conflicts to maintain idempotency.
      */
     private void createUserProfile(Long userId) {
         Optional.of(userId)
@@ -105,6 +109,26 @@ public class UserServiceImpl implements UserService {
                 .ifPresent(profile -> {
                     try {
                         userProfileMapper.insert(profile);
+                    } catch (Exception ignore) {
+                        // If unique key conflict, maintain idempotency
+                    }
+                });
+
+        Optional.of(userId)
+                .map(UserHealthProfile::createForUser)
+                .ifPresent(healthProfile -> {
+                    try {
+                        healthProfileMapper.insert(healthProfile);
+                    } catch (Exception ignore) {
+                        // If unique key conflict, maintain idempotency
+                    }
+                });
+
+        Optional.of(userId)
+                .map(UserSocialStats::createForUser)
+                .ifPresent(socialStats -> {
+                    try {
+                        socialStatsMapper.insert(socialStats);
                     } catch (Exception ignore) {
                         // If unique key conflict, maintain idempotency
                     }

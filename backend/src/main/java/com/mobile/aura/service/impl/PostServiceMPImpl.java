@@ -1,6 +1,7 @@
 package com.mobile.aura.service.impl;
 
 import com.mobile.aura.domain.content.*;
+import com.mobile.aura.domain.event.EventLog.EventType;
 import com.mobile.aura.domain.user.UserFollow;
 import com.mobile.aura.domain.user.UserSocialStats;
 import com.mobile.aura.dto.Cursor;
@@ -8,6 +9,7 @@ import com.mobile.aura.dto.PageResponse;
 import com.mobile.aura.dto.post.*;
 import com.mobile.aura.dto.tag.TagDtos;
 import com.mobile.aura.mapper.*;
+import com.mobile.aura.service.EventLogService;
 import com.mobile.aura.service.PostService;
 import com.mobile.aura.service.TagService;
 import com.mobile.aura.support.BizException;
@@ -35,12 +37,14 @@ public class PostServiceMPImpl implements PostService {
     private final PostLikeMapper likeMapper;
     private final PostBookmarkMapper bookmarkMapper;
     private final PostCommentMapper commentMapper;
+    private final CommentLikeMapper commentLikeMapper;
 
     private final UserFollowMapper followMapper;
     private final UserBlockMapper blockMapper;
     private final UserSocialStatsMapper socialStatsMapper;
 
     private final TagService tagService;
+    private final EventLogService eventLogService;
 
     /* --------------------- Utility Methods --------------------- */
 
@@ -104,6 +108,14 @@ public class PostServiceMPImpl implements PostService {
         // Create initial statistics record
         PostStatistics stats = PostStatistics.createForPost(p.getId());
         statisticsMapper.insert(stats);
+
+        // Handle media items if provided
+        AtomicInteger sortOrder = new AtomicInteger(0);
+        Optional.ofNullable(req.getMedias())
+                .filter(medias -> !medias.isEmpty())
+                .ifPresent(medias -> medias.stream()
+                        .map(media -> PostMedia.createFrom(p.getId(), media, sortOrder.getAndIncrement()))
+                        .forEach(mediaMapper::insert));
 
         // Handle tags if provided
         Optional.ofNullable(req.getTags())
@@ -207,6 +219,11 @@ public class PostServiceMPImpl implements PostService {
     public PostDetailResp detail(Long viewer, Long postId) {
         Post p = mustReadablePost(viewer, postId);
 
+        // Log click event (user viewed post detail)
+        if (viewer != null) {
+            eventLogService.logEventAsync(viewer, postId, EventType.CLICK);
+        }
+
         // Fetch media items
         List<PostMedia> mds = mediaMapper.listByPostId(postId);
         List<MediaItem> medias = mds.stream().map(Post::toMediaItem).toList();
@@ -216,8 +233,12 @@ public class PostServiceMPImpl implements PostService {
                 .map(TagDtos.TagResp::getName)
                 .toList();
 
+        // Fetch statistics
+        PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                .orElse(PostStatistics.createForPost(postId));
+
         // Convert to response DTO using domain method
-        return p.toDetailResp(medias, tags);
+        return p.toDetailResp(medias, tags, stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount());
     }
 
     /**
@@ -233,7 +254,12 @@ public class PostServiceMPImpl implements PostService {
                 limit,
                 postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
                         .map(PostMedia::getUrl)
-                        .orElse(null)
+                        .orElse(null),
+                postId -> {
+                    PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                            .orElse(PostStatistics.createForPost(postId));
+                    return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                }
         );
     }
 
@@ -259,10 +285,59 @@ public class PostServiceMPImpl implements PostService {
                             limit,
                             postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
                                     .map(PostMedia::getUrl)
-                                    .orElse(null)
+                                    .orElse(null),
+                            postId -> {
+                                PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                                        .orElse(PostStatistics.createForPost(postId));
+                                return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                            }
                     );
                 })
                 .orElse(PageResponse.empty());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PageResponse<PostCardResp> searchPublic(Long viewer, String keyword, String category, int limit, String cursor) {
+        Cursor parsedCursor = Cursor.parse(cursor);
+        List<Post> posts = postMapper.searchPublic(keyword, category, parsedCursor.getTimestamp(), parsedCursor.getId(), limit + 1);
+
+        return Post.toCardsPageResponse(
+                toPostsFilteringBlocks(viewer, posts),
+                limit,
+                postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
+                        .map(PostMedia::getUrl)
+                        .orElse(null),
+                postId -> {
+                    PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                            .orElse(PostStatistics.createForPost(postId));
+                    return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                }
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PageResponse<PostCardResp> listMyPosts(Long authorId, int limit, String cursor) {
+        Cursor parsedCursor = Cursor.parse(cursor);
+        List<Post> posts = postMapper.listByAuthor(authorId, parsedCursor.getTimestamp(), parsedCursor.getId(), limit + 1);
+
+        return Post.toCardsPageResponse(
+                posts,
+                limit,
+                postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
+                        .map(PostMedia::getUrl)
+                        .orElse(null),
+                postId -> {
+                    PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                            .orElse(PostStatistics.createForPost(postId));
+                    return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                }
+        );
     }
 
     /**
@@ -297,6 +372,9 @@ public class PostServiceMPImpl implements PostService {
 
         // Increment like count in statistics table
         PostStatistics.ensureUpdated(statisticsMapper.incLikeCount(postId, 1));
+
+        // Log like event
+        eventLogService.logEventAsync(uid, postId, EventType.LIKE);
     }
 
     /**
@@ -317,6 +395,14 @@ public class PostServiceMPImpl implements PostService {
      * {@inheritDoc}
      */
     @Override
+    public boolean isLiked(Long uid, Long postId) {
+        return likeMapper.countLike(uid, postId) > 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     @Transactional
     public void bookmark(Long uid, Long postId) {
         mustReadablePost(uid, postId);
@@ -330,6 +416,9 @@ public class PostServiceMPImpl implements PostService {
 
         // Increment bookmark count in statistics table
         PostStatistics.ensureUpdated(statisticsMapper.incBookmarkCount(postId, 1));
+
+        // Log favorite event
+        eventLogService.logEventAsync(uid, postId, EventType.FAVORITE);
     }
 
     /**
@@ -346,6 +435,55 @@ public class PostServiceMPImpl implements PostService {
         PostStatistics.ensureUpdated(statisticsMapper.incBookmarkCount(postId, -1));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isBookmarked(Long uid, Long postId) {
+        return bookmarkMapper.countBookmark(uid, postId) > 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PageResponse<PostCardResp> listBookmarkedPosts(Long userId, int limit, String cursor) {
+        Cursor parsedCursor = Cursor.parse(cursor);
+        List<PostBookmark> bookmarks = bookmarkMapper.listByUser(userId, parsedCursor.formatTimestamp(), parsedCursor.getId(), limit + 1);
+
+        // Extract post IDs and fetch posts
+        List<Long> postIds = bookmarks.stream()
+                .map(PostBookmark::getPostId)
+                .toList();
+
+        return Optional.of(postIds)
+                .filter(ids -> !ids.isEmpty())
+                .map(ids -> {
+                    // Fetch posts by IDs (maintaining bookmark order)
+                    List<Post> posts = postMapper.selectBatchIds(ids).stream()
+                            .filter(post -> !post.isDeleted() && "public".equals(post.getVisibility()))
+                            .sorted((a, b) -> Integer.compare(
+                                    postIds.indexOf(a.getId()),
+                                    postIds.indexOf(b.getId())
+                            ))
+                            .toList();
+
+                    return Post.toCardsPageResponse(
+                            posts,
+                            limit,
+                            postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
+                                    .map(PostMedia::getUrl)
+                                    .orElse(null),
+                            postId -> {
+                                PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                                        .orElse(PostStatistics.createForPost(postId));
+                                return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                            }
+                    );
+                })
+                .orElse(PageResponse.empty());
+    }
+
     /* --------------------- Comment Operations (Nested Comments) --------------------- */
 
     /**
@@ -356,9 +494,14 @@ public class PostServiceMPImpl implements PostService {
     public Long createComment(Long uid, Long postId, CommentCreateReq req) {
         mustReadablePost(uid, postId);
 
-        return Optional.ofNullable(req.getParentId())
+        Long commentId = Optional.ofNullable(req.getParentId())
                 .map(parentId -> createReplyComment(uid, postId, parentId, req.getContent()))
                 .orElseGet(() -> createRootComment(uid, postId, req.getContent()));
+
+        // Log comment event
+        eventLogService.logEventAsync(uid, postId, EventType.COMMENT);
+
+        return commentId;
     }
 
     /**
@@ -443,5 +586,49 @@ public class PostServiceMPImpl implements PostService {
         List<PostComment> replies = commentMapper.listReplies(root.getPostId(), root.getId(), parsedCursor.formatTimestamp(), parsedCursor.getId(), limit + 1);
 
         return PostComment.toRepliesPageResponse(replies, limit);
+    }
+
+    /* --------------------- Comment Like Operations --------------------- */
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void likeComment(Long uid, Long commentId) {
+        PostComment comment = commentMapper.selectById(commentId);
+        comment.ensureExists();
+
+        // Ensure not already liked
+        CommentLike.ensureNotExists(commentLikeMapper.countLike(uid, commentId));
+
+        // Create and insert like
+        CommentLike like = CommentLike.create(uid, commentId);
+        commentLikeMapper.insert(like);
+
+        // Increment like count
+        PostComment.ensureUpdated(commentMapper.incLikeCount(commentId, 1));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void unlikeComment(Long uid, Long commentId) {
+        // Delete like and ensure it existed
+        int deletedCount = commentLikeMapper.deleteLike(uid, commentId);
+        CommentLike.ensureDeleted(deletedCount);
+
+        // Decrement like count
+        PostComment.ensureUpdated(commentMapper.incLikeCount(commentId, -1));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isCommentLiked(Long uid, Long commentId) {
+        return commentLikeMapper.countLike(uid, commentId) > 0;
     }
 }

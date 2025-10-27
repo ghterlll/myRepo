@@ -8,7 +8,7 @@ import com.aura.starter.data.run.RunDao;
 import com.aura.starter.data.run.RunPoint;
 import com.aura.starter.data.run.RunSession;
 
-@Database(entities = {RunSession.class, RunPoint.class}, version = 1)
+@Database(entities = {RunSession.class, RunPoint.class}, version = 1, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase INSTANCE;
     public abstract RunDao runDao();

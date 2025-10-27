@@ -8,6 +8,7 @@ import com.mobile.aura.dto.ResponseResult;
 import com.mobile.aura.dto.user.ResetPasswordReq;
 import com.mobile.aura.dto.user.UserDtos.*;
 import com.mobile.aura.dto.user.UserProfileUpdateReq;
+import com.mobile.aura.dto.user.UserRecommendationProfileUpdateReq;
 import com.mobile.aura.service.EmailCodeService;
 import com.mobile.aura.service.UserProfileService;
 import com.mobile.aura.service.UserService;
@@ -215,5 +216,44 @@ public class UserController {
     @GetMapping("/basic-info")
     public ResponseResult<?> getBasicInfo(@RequestParam("ids") List<Long> userIds) {
         return ResponseResult.success(profileService.getBasicInfoBatch(userIds));
+    }
+
+    /**
+     * Get user's recommendation profile information.
+     * Returns recommendation-related fields: interests, device preference, recent geos, activity level.
+     *
+     * @param userId current user ID from JWT token
+     * @return recommendation profile response
+     */
+    @GetMapping("/me/recommendation-profile")
+    public ResponseResult<?> getMyRecommendationProfile(@RequestAttribute(JwtAuthInterceptor.ATTR_USER_ID) Long userId) {
+        return ResponseResult.success(profileService.getRecommendationProfile(userId));
+    }
+
+    /**
+     * Update user's recommendation profile fields.
+     * PATCH semantics: only updates provided fields, null fields are ignored.
+     * Creates profile if it doesn't exist.
+     *
+     * Request body example:
+     * {
+     *   "interests": ["fitness", "nutrition", "yoga"],
+     *   "devicePreference": "iOS",
+     *   "recentGeos": [
+     *     {"lat": -37.8136, "lon": 144.9631, "timestamp": "2024-10-26T10:00:00Z"}
+     *   ],
+     *   "activityLevel": "high"
+     * }
+     *
+     * @param userId current user ID from JWT token
+     * @param req recommendation profile update request
+     * @return success response
+     */
+    @PatchMapping("/me/recommendation-profile")
+    public ResponseResult<?> updateMyRecommendationProfile(
+            @RequestAttribute(JwtAuthInterceptor.ATTR_USER_ID) Long userId,
+            @RequestBody UserRecommendationProfileUpdateReq req) {
+        profileService.updateRecommendationProfile(userId, req);
+        return ResponseResult.success();
     }
 }

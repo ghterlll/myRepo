@@ -2,6 +2,7 @@ package com.mobile.aura.service.impl;
 
 import com.mobile.aura.domain.content.Post;
 import com.mobile.aura.domain.content.PostMedia;
+import com.mobile.aura.domain.content.PostStatistics;
 import com.mobile.aura.domain.content.PostTag;
 import com.mobile.aura.domain.content.Tag;
 import com.mobile.aura.dto.Cursor;
@@ -32,6 +33,7 @@ public class TagServiceImpl implements TagService {
     private final PostTagMapper postTagMapper;
     private final PostMapper postMapper;
     private final PostMediaMapper mediaMapper;
+    private final PostStatisticsMapper statisticsMapper;
     private final UserBlockMapper blockMapper;
 
     /* --------------------- Utility Methods --------------------- */
@@ -219,7 +221,12 @@ public class TagServiceImpl implements TagService {
                 limit,
                 postId -> Optional.ofNullable(mediaMapper.findFirstByPostId(postId))
                         .map(PostMedia::getUrl)
-                        .orElse(null)
+                        .orElse(null),
+                postId -> {
+                    PostStatistics stats = Optional.ofNullable(statisticsMapper.selectById(postId))
+                            .orElse(PostStatistics.createForPost(postId));
+                    return new int[]{stats.getLikeCount(), stats.getCommentCount(), stats.getBookmarkCount()};
+                }
         );
     }
 }

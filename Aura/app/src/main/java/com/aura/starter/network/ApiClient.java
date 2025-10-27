@@ -11,6 +11,8 @@ import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class ApiClient {
     private static Retrofit retrofit;
@@ -20,14 +22,14 @@ public class ApiClient {
 
     // Option 1: Physical device with USB + adb reverse (Recommended)
     // Run: adb reverse tcp:8080 tcp:8080
-    private static String baseUrl = "http://localhost:8080/";
+    // private static String baseUrl = "http://localhost:8080/";
 
     // Option 2: Android Studio Emulator
     // private static String baseUrl = "http://10.0.2.2:8080/";
 
     // Option 3: Physical device via WiFi (same network)
     // Replace with your computer's IP address (run 'ipconfig' to find it)
-    // private static String baseUrl = "http://192.168.1.XXX:8080/";
+    private static String baseUrl = "http://192.168.5.22:8080/";
 
     private static volatile String accessToken = null;
 
@@ -56,10 +58,14 @@ public class ApiClient {
                 .readTimeout(20, TimeUnit.SECONDS)
                 .build();
 
+        // 创建自定义Gson配置，确保数字正确解析为Long而不是Double
+        Gson gson = new GsonBuilder()
+                .create();
+
         retrofit = new Retrofit.Builder()
                 .baseUrl(baseUrl)
                 .client(client)
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson))
                 .build();
         return retrofit;
     }

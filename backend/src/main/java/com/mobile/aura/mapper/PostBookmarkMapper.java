@@ -5,6 +5,8 @@ import com.mobile.aura.domain.content.PostBookmark;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 @Mapper
 public interface PostBookmarkMapper extends BaseMapper<PostBookmark> {
 
@@ -23,4 +25,17 @@ public interface PostBookmarkMapper extends BaseMapper<PostBookmark> {
      * @return number of deleted rows
      */
     int deleteBookmark(@Param("userId") Long userId, @Param("postId") Long postId);
+
+    /**
+     * List bookmarked posts by user with pagination (cursor-based).
+     * @param userId the user ID
+     * @param cursorTimestamp cursor timestamp for pagination
+     * @param cursorId cursor ID for pagination
+     * @param limit page size (fetch limit+1 for hasMore detection)
+     * @return list of bookmarks ordered by created_at DESC
+     */
+    List<PostBookmark> listByUser(@Param("userId") Long userId,
+                                   @Param("cursorTimestamp") String cursorTimestamp,
+                                   @Param("cursorId") Long cursorId,
+                                   @Param("limit") int limit);
 }

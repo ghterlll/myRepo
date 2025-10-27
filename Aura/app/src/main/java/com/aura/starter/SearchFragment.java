@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -15,7 +16,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -36,7 +36,7 @@ public class SearchFragment extends Fragment {
     private static final String KEY_HISTORY = "history";
     private static final int MAX_HISTORY_ITEMS = 5;
 
-    private TextInputEditText etSearch;
+    private EditText etSearch;
     private RecyclerView recyclerHotTerms;
     private RecyclerView recyclerHistory;
     private TextView tvClearAll;
@@ -207,9 +207,19 @@ public class SearchFragment extends Fragment {
     private class HotTermsAdapter extends RecyclerView.Adapter<HotTermsAdapter.ViewHolder> {
         @NonNull @Override public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             TextView textView = new TextView(requireContext());
-            textView.setPadding(16, 8, 16, 8);
-            textView.setBackgroundResource(android.R.drawable.btn_default_small);
-            textView.setTextColor(getResources().getColor(android.R.color.black));
+            // Modern green chip styling with proper margins
+            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.setMargins(0, 0, 16, 0); // Right margin for spacing
+            textView.setLayoutParams(params);
+            textView.setPadding(32, 20, 32, 20); // Larger padding for modern look
+            textView.setBackgroundResource(R.drawable.bg_chip_green);
+            textView.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+            textView.setTextSize(14);
+            textView.setClickable(true);
+            textView.setFocusable(true);
             return new ViewHolder(textView);
         }
 

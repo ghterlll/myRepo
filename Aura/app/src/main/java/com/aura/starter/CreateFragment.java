@@ -31,6 +31,11 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import com.aura.starter.model.Post;
+import com.aura.starter.network.FileRepository;
+import com.aura.starter.network.PostRepository;
+import com.aura.starter.network.models.FileUploadResponse;
+import com.aura.starter.network.models.MediaItem;
+import com.aura.starter.network.models.PostCreateRequest;
 import com.aura.starter.util.PermissionManager;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
@@ -44,6 +49,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,10 +62,10 @@ public class CreateFragment extends Fragment {
     private CreatePostViewModel createVm;
     private EditText etTitle, etContent;
     private TextInputLayout tilTitle, tilContent;
-    private ChipGroup chipGroup;
-    private ImageView imgPreview;
+    private TextView tagFitness, tagDiet, tagRecipe, tagPlan, tagOutcome;
+    private ImageView imgPreview, iconCamera;
     private Button btnPublish;
-    private ImageButton btnDeleteImage;
+    private ImageButton btnDeleteImage, btnBack;
     private LinearLayout layoutTags;
     private TextView tvSelectedTags;
 
@@ -137,22 +143,38 @@ public class CreateFragment extends Fragment {
         etContent = v.findViewById(R.id.etContent);
         tilTitle = v.findViewById(R.id.tilTitle);
         tilContent = v.findViewById(R.id.tilContent);
-        chipGroup = v.findViewById(R.id.chipGroup);
+
+        // Tag TextViews
+        tagFitness = v.findViewById(R.id.tagFitness);
+        tagDiet = v.findViewById(R.id.tagDiet);
+        tagRecipe = v.findViewById(R.id.tagRecipe);
+        tagPlan = v.findViewById(R.id.tagPlan);
+        tagOutcome = v.findViewById(R.id.tagOutcome);
+
         imgPreview = v.findViewById(R.id.imgPreview);
+        iconCamera = v.findViewById(R.id.iconCamera);
         btnPublish = v.findViewById(R.id.btnPublish);
+        btnBack = v.findViewById(R.id.btnBack);
         layoutTags = v.findViewById(R.id.layoutTags);
         tvSelectedTags = v.findViewById(R.id.tvSelectedTags);
 
-        // 新增删除按钮
+        // Back button
+        btnBack.setOnClickListener(v1 -> {
+            if (getActivity() != null) {
+                getActivity().onBackPressed();
+            }
+        });
+
+        // Delete image button
         btnDeleteImage = v.findViewById(R.id.btnDeleteImage);
         btnDeleteImage.setOnClickListener(this::deleteSelectedImage);
 
-        // 为图片预览区域添加点击监听器
+        // Image preview click listener
         imgPreview.setOnClickListener(this::onImagePreviewClick);
 
         btnPublish.setOnClickListener(this::publishPost);
 
-        // 设置清除按钮监听器
+        // Clear button listeners
         tilTitle.setEndIconOnClickListener(view -> {
             etTitle.setText("");
             createVm.setTitle("");
@@ -201,26 +223,29 @@ public class CreateFragment extends Fragment {
     }
 
     private void setupTags() {
-        Log.d(TAG, "setupTags called, predefinedTags: " + predefinedTags);
-        for (String tag : predefinedTags) {
-            Chip chip = new Chip(requireContext());
-            chip.setText(tag);
-            chip.setCheckable(true);
-            chip.setChipBackgroundColorResource(R.color.chip_background_selector);
-            chip.setTextColor(getResources().getColorStateList(R.color.chip_text_selector));
-            chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                Log.d(TAG, "Chip " + tag + " checked: " + isChecked + " (user interaction)");
-                if (isChecked) {
-                    createVm.addTag(tag);
-                } else {
-                    createVm.removeTag(tag);
-                }
-                // 状态已通过ViewModel观察者更新，无需手动更新
-                autoSaveDraft();
-            });
-            chipGroup.addView(chip);
-        }
-        Log.d(TAG, "setupTags completed, chipGroup child count: " + chipGroup.getChildCount());
+        Log.d(TAG, "setupTags called");
+
+        View.OnClickListener tagClickListener = v -> {
+            TextView tag = (TextView) v;
+            boolean isSelected = tag.isSelected();
+            tag.setSelected(!isSelected);
+
+            String tagText = tag.getText().toString();
+            if (!isSelected) {
+                createVm.addTag(tagText);
+            } else {
+                createVm.removeTag(tagText);
+            }
+            autoSaveDraft();
+        };
+
+        tagFitness.setOnClickListener(tagClickListener);
+        tagDiet.setOnClickListener(tagClickListener);
+        tagRecipe.setOnClickListener(tagClickListener);
+        tagPlan.setOnClickListener(tagClickListener);
+        tagOutcome.setOnClickListener(tagClickListener);
+
+        Log.d(TAG, "setupTags completed");
     }
 
     private void setupImagePicker() {
@@ -229,16 +254,18 @@ public class CreateFragment extends Fragment {
     }
 
     /**
-     * 更新图片预览区域的状态
+     * Update image preview area state
      */
     private void updateImagePreviewState() {
         if (selectedImagePath != null && !selectedImagePath.isEmpty()) {
-            // 状态2：显示缩略图和删除按钮
+            // State 2: Show thumbnail and delete button
             btnDeleteImage.setVisibility(View.VISIBLE);
+            iconCamera.setVisibility(View.GONE);
             imgPreview.setBackgroundResource(R.drawable.bg_image_with_delete);
         } else {
-            // 状态1：显示+号
+            // State 1: Show camera icon
             btnDeleteImage.setVisibility(View.GONE);
+            iconCamera.setVisibility(View.VISIBLE);
             imgPreview.setBackgroundResource(R.drawable.bg_add_image);
         }
     }
@@ -296,26 +323,26 @@ public class CreateFragment extends Fragment {
 
     private void showImagePickerDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle("选择图片来源");
-        builder.setItems(new String[]{"相册", "拍照"}, (dialog, which) -> {
+        builder.setTitle("Select Image Source");
+        builder.setItems(new String[]{"Gallery", "Camera"}, (dialog, which) -> {
             if (which == 0) {
-                // 相册选择
+                // Gallery
                 imagePicker.launch("image/*");
             } else {
-                // 拍照 - 先检查权限
+                // Camera - check permission first
                 String cameraPermission = android.Manifest.permission.CAMERA;
                 permissionManager.requestPermission(cameraPermission, new PermissionManager.PermissionCallback() {
                     @Override
                     public void onGranted(String permission) {
-                        // 权限已授权，开始拍照
+                        // Permission granted
                         startCameraCapture();
                     }
 
                     @Override
                     public void onDenied(String permission) {
-                        // 权限被拒绝，显示提示
+                        // Permission denied
                         Toast.makeText(requireContext(),
-                            "需要相机权限才能拍照，请在设置中授予权限",
+                            "Camera permission is required. Please grant it in settings",
                             Toast.LENGTH_LONG).show();
                     }
                 });
@@ -344,7 +371,7 @@ public class CreateFragment extends Fragment {
                 cameraLauncher.launch(cameraImageUri);
             }
         } catch (IOException e) {
-            Toast.makeText(requireContext(), "无法创建图片文件", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Cannot create image file", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -396,34 +423,25 @@ public class CreateFragment extends Fragment {
 
     private void handleSelectedImage(Uri uri) {
         try {
-            // 使用更安全的图片处理方式
-            Bitmap originalBitmap = decodeSampledBitmapFromUri(uri, 800, 800);
-            if (originalBitmap == null) {
-                Toast.makeText(requireContext(), "无法读取图片", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            // Save URI as string path (let Glide handle the loading and caching)
+            selectedImagePath = uri.toString();
 
-            // 压缩图片为200x200正方形
-            Bitmap compressedBitmap = Bitmap.createScaledBitmap(originalBitmap, 200, 200, true);
-            if (originalBitmap != compressedBitmap) {
-                originalBitmap.recycle(); // 回收原图释放内存
-            }
-
-            // 保存到临时文件
-            File tempFile = saveCompressedImage(compressedBitmap);
-            selectedImagePath = tempFile.getAbsolutePath();
-
-            // 更新ViewModel状态，UI会通过观察者自动更新
+            // Update ViewModel state
             createVm.setSelectedImagePath(selectedImagePath);
 
-            // 更新图片预览区域状态
+            // Load image with Glide (modern approach - no manual compression)
+            glideRequestManager
+                .load(uri)
+                .centerCrop()
+                .into(imgPreview);
+
+            // Update image preview state
             updateImagePreviewState();
 
             autoSaveDraft();
-        } catch (OutOfMemoryError e) {
-            Toast.makeText(requireContext(), "图片过大，请选择较小的图片", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "图片处理失败", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Image processing failed", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Error handling selected image", e);
         }
     }
 
@@ -488,8 +506,8 @@ public class CreateFragment extends Fragment {
         String[] words = title.split("\\s+");
         int wordCount = words.length;
 
-        tilTitle.setHelperText(wordCount + "个单词");
-        tilTitle.setError(title.isEmpty() ? "标题不能为空" : null);
+        tilTitle.setHelperText(wordCount + " words");
+        tilTitle.setError(title.isEmpty() ? "Title cannot be empty" : null);
     }
 
     private void updateContentValidation() {
@@ -497,8 +515,8 @@ public class CreateFragment extends Fragment {
         String[] words = content.split("\\s+");
         int wordCount = words.length;
 
-        tilContent.setHelperText(wordCount + "个单词（至少3个）");
-        tilContent.setError(wordCount < 3 ? "内容至少需要3个单词" : null);
+        tilContent.setHelperText(wordCount + " words (at least 3)");
+        tilContent.setError(wordCount < 3 ? "Content must have at least 3 words" : null);
     }
 
     private void updateTagsDisplay() {
@@ -512,7 +530,6 @@ public class CreateFragment extends Fragment {
     private void updateValidationDisplay() {
         boolean isValid = isFormValid();
         btnPublish.setEnabled(isValid);
-        btnPublish.setAlpha(isValid ? 1.0f : 0.5f);
     }
 
     private boolean isFormValid() {
@@ -588,61 +605,231 @@ public class CreateFragment extends Fragment {
     }
 
     private void updateSelectedTags() {
-        Log.d(TAG, "updateSelectedTags called, chipGroup child count: " + chipGroup.getChildCount() + ", selectedTags: " + selectedTags);
-        if (chipGroup.getChildCount() == 0) {
-            Log.w(TAG, "chipGroup has no children, cannot update chip states");
-            return;
-        }
+        Log.d(TAG, "updateSelectedTags called, selectedTags: " + selectedTags);
 
-        for (int i = 0; i < chipGroup.getChildCount(); i++) {
-            Chip chip = (Chip) chipGroup.getChildAt(i);
-            if (chip == null) {
-                Log.w(TAG, "Chip at index " + i + " is null");
-                continue;
-            }
-
-            String chipText = chip.getText().toString();
-            boolean shouldBeChecked = selectedTags.contains(chipText);
-            boolean currentlyChecked = chip.isChecked();
-            Log.d(TAG, "Chip " + i + " (" + chipText + ") should be checked: " + shouldBeChecked + ", currently checked: " + currentlyChecked);
-
-            if (shouldBeChecked != currentlyChecked) {
-                Log.d(TAG, "Setting chip " + chipText + " checked state to: " + shouldBeChecked);
-                chip.setChecked(shouldBeChecked);
-            }
-        }
+        tagFitness.setSelected(selectedTags.contains("fitness"));
+        tagDiet.setSelected(selectedTags.contains("diet"));
+        tagRecipe.setSelected(selectedTags.contains("recipe"));
+        tagPlan.setSelected(selectedTags.contains("plan"));
+        tagOutcome.setSelected(selectedTags.contains("outcome"));
     }
 
     private void publishPost(View v) {
         if (!isFormValid()) {
-            Toast.makeText(requireContext(), "请完善信息", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Please complete all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 从ViewModel获取最新状态
+        // Get latest state from ViewModel
         String title = createVm.getTitle().getValue() != null ? createVm.getTitle().getValue() : "";
         String content = createVm.getContent().getValue() != null ? createVm.getContent().getValue() : "";
-        String tags = String.join(",", createVm.getSelectedTags().getValue() != null ? createVm.getSelectedTags().getValue() : new ArrayList<>());
         String imagePath = createVm.getSelectedImagePath().getValue();
 
-        Post post = new Post(UUID.randomUUID().toString(), "You", title, content, tags, imagePath);
+        // Disable publish button to prevent double submission
+        btnPublish.setEnabled(false);
+        btnPublish.setText("Publishing...");
 
-        // 添加到Feed并跳转到首页
-        feedVm.addPost(post);
+        // Step 1: Upload image first (if exists)
+        if (imagePath != null && !imagePath.isEmpty()) {
+            uploadImageThenCreatePost(title, content, imagePath);
+        } else {
+            // No image, create post directly
+            createPostWithMedia(title, content, null, 0, 0);
+        }
+    }
 
-        // 清空草稿
-        clearDraft();
+    /**
+     * Upload image first, then create post with image URL
+     */
+    private void uploadImageThenCreatePost(String title, String content, String imagePath) {
+        FileRepository fileRepo = FileRepository.getInstance();
 
-        // 清空表单
-        clearForm();
+        // Convert image path to File
+        File imageFile = null;
+        try {
+            if (imagePath.startsWith("content://") || imagePath.startsWith("file://")) {
+                // URI path - need to convert to file
+                Uri uri = Uri.parse(imagePath);
+                imageFile = uriToFile(uri);
+            } else {
+                // File path
+                imageFile = new File(imagePath);
+            }
 
-        Toast.makeText(requireContext(), "发布成功！", Toast.LENGTH_SHORT).show();
+            if (imageFile == null || !imageFile.exists()) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Image file not found", Toast.LENGTH_SHORT).show();
+                    resetPublishButton();
+                });
+                return;
+            }
 
-        // 跳转到首页
-        Intent intent = new Intent(requireContext(), MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-        requireActivity().finish();
+            final File finalImageFile = imageFile;
+
+            // Get image dimensions before upload
+            final int[] dimensions = getImageDimensions(finalImageFile);
+
+            fileRepo.uploadPostImage(finalImageFile, new FileRepository.ResultCallback<FileUploadResponse>() {
+                @Override
+                public void onSuccess(FileUploadResponse response) {
+                    // Image uploaded successfully, now create post with image URL
+                    String imageUrl = response.getUrl();
+                    createPostWithMedia(title, content, imageUrl, dimensions[0], dimensions[1]);
+                }
+
+                @Override
+                public void onError(String message) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Failed to upload image: " + message, Toast.LENGTH_SHORT).show();
+                        resetPublishButton();
+                    });
+                }
+            });
+        } catch (Exception e) {
+            requireActivity().runOnUiThread(() -> {
+                Toast.makeText(requireContext(), "Failed to process image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                resetPublishButton();
+            });
+        }
+    }
+
+    /**
+     * Convert URI to File
+     */
+    private File uriToFile(Uri uri) {
+        try {
+            // Determine file extension from MIME type or URI
+            String extension = getFileExtensionFromUri(uri);
+
+            // Create temp file with correct extension
+            File tempFile = File.createTempFile("upload_", extension, requireContext().getCacheDir());
+
+            // Copy URI content to temp file
+            java.io.InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+            FileOutputStream outputStream = new FileOutputStream(tempFile);
+
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+
+            inputStream.close();
+            outputStream.close();
+
+            return tempFile;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to convert URI to file", e);
+            return null;
+        }
+    }
+
+    /**
+     * Get file extension from URI based on MIME type
+     */
+    private String getFileExtensionFromUri(Uri uri) {
+        // Try to get MIME type from content resolver
+        String mimeType = requireContext().getContentResolver().getType(uri);
+
+        if (mimeType != null) {
+            switch (mimeType) {
+                case "image/jpeg":
+                    return ".jpg";
+                case "image/png":
+                    return ".png";
+                case "image/gif":
+                    return ".gif";
+                case "image/webp":
+                    return ".webp";
+            }
+        }
+
+        // Fallback: try to get extension from URI path
+        String path = uri.getPath();
+        if (path != null) {
+            if (path.toLowerCase().endsWith(".png")) return ".png";
+            if (path.toLowerCase().endsWith(".gif")) return ".gif";
+            if (path.toLowerCase().endsWith(".webp")) return ".webp";
+        }
+
+        // Default to jpg
+        return ".jpg";
+    }
+
+    /**
+     * Create post with optional media URL and dimensions
+     */
+    private void createPostWithMedia(String title, String content, String imageUrl, int width, int height) {
+        // Validate image URL if provided
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            if (!isValidImageUrl(imageUrl)) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Invalid image URL received from server", Toast.LENGTH_SHORT).show();
+                    resetPublishButton();
+                });
+                return;
+            }
+        }
+
+        // Build media list
+        List<MediaItem> medias = null;
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            medias = new ArrayList<>();
+            // MediaItem constructor: (String url, Integer width, Integer height)
+            // Use actual dimensions if available (width > 0), otherwise null
+            MediaItem mediaItem = new MediaItem(
+                imageUrl,
+                width > 0 ? width : null,
+                height > 0 ? height : null
+            );
+            mediaItem.setSortOrder(0);
+            medias.add(mediaItem);
+        }
+
+        // Create post request
+        PostCreateRequest createRequest = new PostCreateRequest(
+            title,
+            content,
+            true, // publish
+            new ArrayList<>(createVm.getSelectedTags().getValue()),
+            medias
+        );
+
+        // Call backend API
+        PostRepository.getInstance().createPost(createRequest, new PostRepository.ResultCallback<Map<String, Long>>() {
+            @Override
+            public void onSuccess(Map<String, Long> result) {
+                requireActivity().runOnUiThread(() -> {
+                    // Clear draft and form
+                    clearDraft();
+                    clearForm();
+
+                    Toast.makeText(requireContext(), "Published successfully!", Toast.LENGTH_SHORT).show();
+
+                    // Navigate back to home
+                    Intent intent = new Intent(requireContext(), MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                    requireActivity().finish();
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Failed to publish: " + message, Toast.LENGTH_SHORT).show();
+                    resetPublishButton();
+                });
+            }
+        });
+    }
+
+    /**
+     * Reset publish button to enabled state
+     */
+    private void resetPublishButton() {
+        btnPublish.setEnabled(true);
+        btnPublish.setText("Publish");
     }
 
     private void clearDraft() {
@@ -657,6 +844,36 @@ public class CreateFragment extends Fragment {
         // 重置图片预览状态
         updateImagePreviewState();
         isDraftLoaded = false;
+    }
+
+    /**
+     * Get image dimensions from file
+     * Returns [width, height], or [0, 0] if unable to read
+     */
+    private int[] getImageDimensions(File imageFile) {
+        int[] dimensions = new int[]{0, 0};
+        try {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true; // Only read dimensions, not the full bitmap
+            BitmapFactory.decodeFile(imageFile.getAbsolutePath(), options);
+            dimensions[0] = options.outWidth;
+            dimensions[1] = options.outHeight;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read image dimensions", e);
+        }
+        return dimensions;
+    }
+
+    /**
+     * Validate image URL format
+     * Check if URL is not empty and starts with http/https
+     */
+    private boolean isValidImageUrl(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            return false;
+        }
+        // Accept HTTP/HTTPS URLs or MinIO URLs
+        return url.startsWith("http://") || url.startsWith("https://");
     }
 
     @Override

@@ -1,6 +1,5 @@
 package com.mobile.aura.controller;
 
-import com.mobile.aura.constant.CommonStatusEnum;
 import com.mobile.aura.dto.ResponseResult;
 import com.mobile.aura.dto.user.UserDtos.RegisterReq;
 import com.mobile.aura.service.UserService;

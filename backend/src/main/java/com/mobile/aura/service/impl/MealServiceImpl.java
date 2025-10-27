@@ -7,6 +7,7 @@ import com.mobile.aura.domain.aggregate.UserFoodItem;
 import com.mobile.aura.dto.meal.DailySummaryResp;
 import com.mobile.aura.dto.meal.MealAddFreeInputReq;
 import com.mobile.aura.dto.meal.MealAddFromSourceReq;
+import com.mobile.aura.dto.meal.MealEditReq;
 import com.mobile.aura.mapper.MealLogMapper;
 import com.mobile.aura.mapper.UserFoodItemMapper;
 import com.mobile.aura.service.MealService;
@@ -65,6 +66,27 @@ public class MealServiceImpl implements MealService {
         MealLog mealLog = MealLog.createFromFreeInput(userId, request);
         mealLogMapper.insert(mealLog);
         return mealLog.getId();
+    }
+
+    @Override
+    @Transactional
+    public void edit(Long userId, Long mealId, MealEditReq request) {
+        MealLog mealLog = mealLogMapper.selectById(mealId);
+
+        if (mealLog == null) {
+            throw new BizException(CommonStatusEnum.MEAL_LOG_NOT_FOUND);
+        }
+
+        mealLog.ensureAccessibleBy(userId);
+
+        // Fetch food item if this meal has a source (for calorie recalculation)
+        UserFoodItem userFoodItem = null;
+        if (mealLog.getSourceId() != null) {
+            userFoodItem = userFoodItemMapper.selectById(mealLog.getSourceId());
+        }
+
+        mealLog.updateFromRequest(request, userFoodItem);
+        mealLogMapper.updateById(mealLog);
     }
 
     @Override

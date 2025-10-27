@@ -1,5 +1,6 @@
 package com.mobile.aura.domain.user;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mobile.aura.constant.CommonStatusEnum;
@@ -23,7 +24,7 @@ public class UserWeightLog {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     private Long userId;

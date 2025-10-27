@@ -42,13 +42,19 @@ public class Post {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
     private String title;
     private Long authorId;
     private String caption;
     private String visibility;
     private Integer mediaCount;
+
+    // Recommendation system fields
+    private String category;        // Content category (health/fitness/nutrition/etc)
+    private Double geoLat;          // Post location latitude
+    private Double geoLon;          // Post location longitude
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
@@ -69,8 +75,11 @@ public class Post {
                 .title(req.getTitle().trim())
                 .caption(req.getCaption())
                 .visibility(Boolean.TRUE.equals(req.getPublish()) ? PostVisibility.PUBLIC : PostVisibility.DRAFT)
-                .status("0")
+                .status(Boolean.TRUE.equals(req.getPublish()) ? "published" : "draft")
                 .mediaCount(req.getMedias() == null ? 0 : req.getMedias().size())
+                .category(req.getCategory() != null ? req.getCategory() : "health")  // Use provided or default
+                .geoLat(req.getGeoLat() != null ? req.getGeoLat() : -37.81361100)   // Use provided or default Melbourne
+                .geoLon(req.getGeoLon() != null ? req.getGeoLon() : 144.96305600)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -134,6 +143,32 @@ public class Post {
      */
     public void updateMediaCount(int count) {
         this.mediaCount = count;
+    }
+
+    /**
+     * Update post category for recommendation system.
+     *
+     * @param category new category (e.g., "health", "fitness", "nutrition")
+     */
+    public void updateCategory(String category) {
+        if (category != null && !category.isBlank()) {
+            this.category = category.trim();
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    /**
+     * Update post geographic location for recommendation system.
+     *
+     * @param lat latitude
+     * @param lon longitude
+     */
+    public void updateGeoLocation(Double lat, Double lon) {
+        if (lat != null && lon != null) {
+            this.geoLat = lat;
+            this.geoLon = lon;
+            this.updatedAt = LocalDateTime.now();
+        }
     }
 
     /**
@@ -213,9 +248,12 @@ public class Post {
      *
      * @param medias list of media items
      * @param tags list of tags
+     * @param likeCount number of likes
+     * @param commentCount number of comments
+     * @param bookmarkCount number of bookmarks
      * @return PostDetailResp DTO
      */
-    public PostDetailResp toDetailResp(List<MediaItem> medias, List<String> tags) {
+    public PostDetailResp toDetailResp(List<MediaItem> medias, List<String> tags, Integer likeCount, Integer commentCount, Integer bookmarkCount) {
         return new PostDetailResp(
                 this.id,
                 this.authorId,
@@ -225,7 +263,10 @@ public class Post {
                 tags,
                 medias,
                 this.createdAt == null ? null : FORMATTER.format(this.createdAt),
-                this.updatedAt == null ? null : FORMATTER.format(this.updatedAt)
+                this.updatedAt == null ? null : FORMATTER.format(this.updatedAt),
+                likeCount,
+                commentCount,
+                bookmarkCount
         );
     }
 
@@ -233,15 +274,21 @@ public class Post {
      * Convert this entity to PostCardResp DTO.
      *
      * @param coverUrl URL of the cover image
+     * @param likeCount number of likes
+     * @param commentCount number of comments
+     * @param bookmarkCount number of bookmarks
      * @return PostCardResp DTO
      */
-    public PostCardResp toCardResp(String coverUrl) {
+    public PostCardResp toCardResp(String coverUrl, Integer likeCount, Integer commentCount, Integer bookmarkCount) {
         return new PostCardResp(
                 this.id,
                 coverUrl,
                 this.authorId,
                 this.title,
-                this.createdAt == null ? null : FORMATTER.format(this.createdAt)
+                this.createdAt == null ? null : FORMATTER.format(this.createdAt),
+                likeCount,
+                commentCount,
+                bookmarkCount
         );
     }
 
@@ -284,14 +331,24 @@ public class Post {
      * @param posts query results (limit + 1 items)
      * @param limit the page size limit
      * @param coverUrlProvider function to get cover URL for each post ID
+     * @param statsProvider function to get statistics (likeCount, commentCount, bookmarkCount) for each post ID
      * @return PageResponse with post cards, cursor, and pagination metadata
      */
     public static PageResponse<PostCardResp> toCardsPageResponse(
             List<Post> posts,
             int limit,
-            Function<Long, String> coverUrlProvider) {
+            Function<Long, String> coverUrlProvider,
+            Function<Long, int[]> statsProvider) {
         List<PostCardResp> cards = posts.stream()
-                .map(post -> post.toCardResp(coverUrlProvider.apply(post.getId())))
+                .map(post -> {
+                    int[] stats = statsProvider.apply(post.getId());
+                    return post.toCardResp(
+                            coverUrlProvider.apply(post.getId()),
+                            stats[0], // likeCount
+                            stats[1], // commentCount
+                            stats[2]  // bookmarkCount
+                    );
+                })
                 .toList();
 
         return PageResponse.paginate(

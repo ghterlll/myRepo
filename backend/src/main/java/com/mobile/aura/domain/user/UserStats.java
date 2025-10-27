@@ -1,5 +1,6 @@
 package com.mobile.aura.domain.user;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -10,7 +11,7 @@ import java.util.Date;
 @Data
 @TableName("user_stats")
 public class UserStats {
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long userId;
     private Integer followCount;
     private Integer followerCount;

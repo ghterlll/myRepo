@@ -1,5 +1,6 @@
 package com.mobile.aura.domain.auth;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mobile.aura.constant.CommonStatusEnum;
@@ -16,7 +17,7 @@ import java.util.Random;
 @Data
 @TableName("email_code")
 public class EmailCode {
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     private Long userId;

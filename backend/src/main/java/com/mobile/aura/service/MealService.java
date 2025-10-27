@@ -3,12 +3,13 @@ package com.mobile.aura.service;
 import com.mobile.aura.dto.meal.DailySummaryResp;
 import com.mobile.aura.dto.meal.MealAddFreeInputReq;
 import com.mobile.aura.dto.meal.MealAddFromSourceReq;
+import com.mobile.aura.dto.meal.MealEditReq;
 
 import java.time.LocalDate;
 
 /**
  * Service interface for meal logging operations.
- * Handles adding, deleting, and summarizing meal records.
+ * Handles adding, editing, deleting, and summarizing meal records.
  */
 public interface MealService {
     /**
@@ -26,6 +27,16 @@ public interface MealService {
      * @return meal log ID
      */
     Long addFreeInput(Long userId, MealAddFreeInputReq req);
+
+    /**
+     * Edit an existing meal log.
+     * Only updates fields that are provided in the request.
+     *
+     * @param userId user ID (for authorization)
+     * @param mealId meal log ID to edit
+     * @param req request with optional fields to update
+     */
+    void edit(Long userId, Long mealId, MealEditReq req);
 
     /**
      * Delete a meal log.

@@ -8,6 +8,8 @@ import com.mobile.aura.dto.user.UserBasicInfoResp;
 import com.mobile.aura.dto.user.UserHealthProfileResp;
 import com.mobile.aura.dto.user.UserProfileResp;
 import com.mobile.aura.dto.user.UserProfileUpdateReq;
+import com.mobile.aura.dto.user.UserRecommendationProfileResp;
+import com.mobile.aura.dto.user.UserRecommendationProfileUpdateReq;
 import com.mobile.aura.mapper.UserHealthProfileMapper;
 import com.mobile.aura.mapper.UserMapper;
 import com.mobile.aura.mapper.UserProfileMapper;
@@ -182,6 +184,51 @@ public class UserProfileServiceImpl implements UserProfileService {
         void applyUpdatesAndSave(UserProfileUpdateReq request) {
             healthProfile.applyUpdates(request);
             persistenceAction.accept(healthProfile);
+        }
+    }
+
+    /**
+     * Get user's recommendation profile information only.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public UserRecommendationProfileResp getRecommendationProfile(Long userId) {
+        User.ensureExists(userMapper.selectById(userId));
+        UserProfile profile = profileMapper.selectById(userId);
+        return UserRecommendationProfileResp.from(profile);
+    }
+
+    /**
+     * Update user's recommendation profile fields.
+     * Creates profile if missing, updates if exists (upsert behavior).
+     */
+    @Override
+    @Transactional
+    public void updateRecommendationProfile(Long userId, UserRecommendationProfileUpdateReq request) {
+        // Ensure user exists
+        User.ensureExists(userMapper.selectById(userId));
+
+        // Upsert user profile with recommendation fields
+        RecommendationProfileUpsertStrategy strategy = Optional.ofNullable(profileMapper.selectById(userId))
+                .map(existing -> new RecommendationProfileUpsertStrategy(existing, profileMapper::updateById))
+                .orElseGet(() -> new RecommendationProfileUpsertStrategy(
+                        UserProfile.createForUser(userId),
+                        profileMapper::insert
+                ));
+
+        strategy.applyUpdatesAndSave(request);
+    }
+
+    /**
+     * Strategy pattern for recommendation profile upsert logic
+     */
+    private record RecommendationProfileUpsertStrategy(
+            UserProfile profile,
+            Consumer<UserProfile> persistenceAction
+    ) {
+        void applyUpdatesAndSave(UserRecommendationProfileUpdateReq request) {
+            profile.applyRecommendationUpdates(request);
+            persistenceAction.accept(profile);
         }
     }
 }

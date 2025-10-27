@@ -5,6 +5,7 @@ import com.mobile.aura.dto.ResponseResult;
 import com.mobile.aura.dto.SingleDateReq;
 import com.mobile.aura.dto.meal.MealAddFreeInputReq;
 import com.mobile.aura.dto.meal.MealAddFromSourceReq;
+import com.mobile.aura.dto.meal.MealEditReq;
 import com.mobile.aura.service.MealService;
 import com.mobile.aura.support.JwtAuthInterceptor;
 import jakarta.validation.Valid;
@@ -42,6 +43,19 @@ public class MealController {
             @Valid @RequestBody MealAddFreeInputReq req) {
         Long id = mealService.addFreeInput(userId, req);
         return ResponseResult.success(Map.of("id", id));
+    }
+
+    /**
+     * Edit an existing meal log
+     * Updates only the provided fields - all fields are optional
+     */
+    @PutMapping("/{id}")
+    public ResponseResult<?> edit(
+            @RequestAttribute(JwtAuthInterceptor.ATTR_USER_ID) Long userId,
+            @PathVariable Long id,
+            @Valid @RequestBody MealEditReq req) {
+        mealService.edit(userId, id, req);
+        return ResponseResult.success();
     }
 
     @DeleteMapping("/{id}")

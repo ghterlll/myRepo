@@ -6,16 +6,16 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
+import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import androidx.annotation.Nullable;
@@ -24,38 +24,37 @@ import com.aura.starter.R;
 
 public class DraggableFloatingButton extends View {
 
-    private static final int AUTO_HIDE_DELAY = 3000; // 3 seconds
-    private static final int LONG_PRESS_TIMEOUT = ViewConfiguration.getLongPressTimeout();
-    private static final float EXPANDED_SIZE = 56f; // dp
-    private static final float COLLAPSED_SIZE = 16f; // dp
+    private static final float BUTTON_SIZE = 56f; // dp
     private static final float DRAG_THRESHOLD = 10f; // dp
+    private static final float MARGIN_FROM_EDGE = 16f; // dp
+    private static final float BOTTOM_NAV_HEIGHT = 56f; // dp - bottom navigation bar height
+    private static final int SNAP_ANIMATION_DURATION = 300; // ms
+
+    // SharedPreferences keys
+    private static final String PREFS_NAME = "FloatingButtonPrefs";
+    private static final String KEY_POSITION_X = "position_x";
+    private static final String KEY_POSITION_Y = "position_y";
+    private static final String KEY_IS_FIRST_TIME = "is_first_time";
 
     private Paint buttonPaint;
     private Paint ripplePaint;
-    private float currentX;
-    private float currentY;
+    private SharedPreferences prefs;
+
+    // Touch tracking
     private float startX;
     private float startY;
     private float dX;
     private float dY;
     private boolean isDragging = false;
-    private boolean isExpanded = true;
-    private boolean isLongPressed = false;
-    private float currentSize;
-    private float rippleRadius = 0f;
+
+    // Screen dimensions
     private int screenWidth;
     private int screenHeight;
 
-    private Handler autoHideHandler = new Handler(Looper.getMainLooper());
-    private Handler longPressHandler = new Handler(Looper.getMainLooper());
+    // Animation
+    private float rippleRadius = 0f;
 
     private OnClickListener clickListener;
-    private OnStateChangeListener stateChangeListener;
-
-    public interface OnStateChangeListener {
-        void onExpanded();
-        void onCollapsed();
-    }
 
     public DraggableFloatingButton(Context context) {
         super(context);
@@ -68,6 +67,7 @@ public class DraggableFloatingButton extends View {
     }
 
     private void init(Context context) {
+        // Initialize paints
         buttonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         buttonPaint.setColor(ContextCompat.getColor(context, R.color.auragreen_primary));
         buttonPaint.setStyle(Paint.Style.FILL);
@@ -75,24 +75,43 @@ public class DraggableFloatingButton extends View {
         ripplePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         ripplePaint.setStyle(Paint.Style.FILL);
 
-        currentSize = dpToPx(EXPANDED_SIZE);
+        // Get screen dimensions
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics metrics = new DisplayMetrics();
+        wm.getDefaultDisplay().getMetrics(metrics);
+        screenWidth = metrics.widthPixels;
+        screenHeight = metrics.heightPixels;
 
-        // Start auto-hide timer
-        scheduleAutoHide();
+        // Initialize SharedPreferences
+        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        screenWidth = w;
-        screenHeight = h;
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
 
-        // Initial position: bottom-right corner
-        if (currentX == 0 && currentY == 0) {
-            currentX = screenWidth - dpToPx(EXPANDED_SIZE) - dpToPx(16);
-            currentY = screenHeight - dpToPx(EXPANDED_SIZE) - dpToPx(16);
-            setTranslationX(currentX);
-            setTranslationY(currentY);
+        // Check if this is the first time
+        boolean isFirstTime = prefs.getBoolean(KEY_IS_FIRST_TIME, true);
+
+        if (isFirstTime) {
+            // First time - set to bottom-right corner
+            float initialX = screenWidth - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
+            float initialY = screenHeight - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE + BOTTOM_NAV_HEIGHT);
+            setTranslationX(initialX);
+            setTranslationY(initialY);
+
+            // Save position and mark as no longer first time
+            savePosition(initialX, initialY);
+            prefs.edit().putBoolean(KEY_IS_FIRST_TIME, false).apply();
+        } else {
+            // Load saved position
+            float savedX = prefs.getFloat(KEY_POSITION_X, -1);
+            float savedY = prefs.getFloat(KEY_POSITION_Y, -1);
+
+            if (savedX != -1 && savedY != -1) {
+                setTranslationX(savedX);
+                setTranslationY(savedY);
+            }
         }
     }
 
@@ -102,7 +121,7 @@ public class DraggableFloatingButton extends View {
 
         float centerX = getWidth() / 2f;
         float centerY = getHeight() / 2f;
-        float radius = currentSize / 2f;
+        float radius = dpToPx(BUTTON_SIZE) / 2f;
 
         // Draw ripple effect
         if (rippleRadius > 0) {
@@ -119,185 +138,148 @@ public class DraggableFloatingButton extends View {
         // Draw main button
         canvas.drawCircle(centerX, centerY, radius, buttonPaint);
 
-        // Draw plus icon (only when expanded)
-        if (isExpanded) {
-            Paint iconPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            iconPaint.setColor(0xFFFFFFFF);
-            iconPaint.setStrokeWidth(dpToPx(3));
-            iconPaint.setStrokeCap(Paint.Cap.ROUND);
+        // Draw plus icon
+        Paint iconPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        iconPaint.setColor(0xFFFFFFFF);
+        iconPaint.setStrokeWidth(dpToPx(3));
+        iconPaint.setStrokeCap(Paint.Cap.ROUND);
 
-            float iconSize = radius * 0.5f;
-            // Horizontal line
-            canvas.drawLine(
-                centerX - iconSize, centerY,
-                centerX + iconSize, centerY,
-                iconPaint
-            );
-            // Vertical line
-            canvas.drawLine(
-                centerX, centerY - iconSize,
-                centerX, centerY + iconSize,
-                iconPaint
-            );
-        }
+        float iconSize = radius * 0.5f;
+        // Horizontal line
+        canvas.drawLine(
+            centerX - iconSize, centerY,
+            centerX + iconSize, centerY,
+            iconPaint
+        );
+        // Vertical line
+        canvas.drawLine(
+            centerX, centerY - iconSize,
+            centerX, centerY + iconSize,
+            iconPaint
+        );
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                // Record initial touch position
                 startX = event.getRawX();
                 startY = event.getRawY();
                 dX = getTranslationX() - event.getRawX();
                 dY = getTranslationY() - event.getRawY();
                 isDragging = false;
-                isLongPressed = false;
-
-                cancelAutoHide();
-                scheduleLongPress();
-
                 playPressAnimation();
                 return true;
 
             case MotionEvent.ACTION_MOVE:
                 float deltaX = Math.abs(event.getRawX() - startX);
                 float deltaY = Math.abs(event.getRawY() - startY);
+                float totalDelta = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-                if (deltaX > dpToPx(DRAG_THRESHOLD) || deltaY > dpToPx(DRAG_THRESHOLD)) {
+                if (totalDelta > dpToPx(DRAG_THRESHOLD)) {
                     isDragging = true;
-                    cancelLongPress();
 
-                    if (isExpanded) {
-                        setTranslationX(event.getRawX() + dX);
-                        setTranslationY(event.getRawY() + dY);
-                    }
+                    // Allow free movement in both X and Y directions
+                    float newX = event.getRawX() + dX;
+                    float newY = event.getRawY() + dY;
+
+                    // Constrain within screen bounds
+                    float maxX = screenWidth - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
+                    float minX = dpToPx(MARGIN_FROM_EDGE);
+                    // Prevent dragging into bottom navigation bar area
+                    float maxY = screenHeight - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE + BOTTOM_NAV_HEIGHT);
+                    float minY = dpToPx(MARGIN_FROM_EDGE);
+
+                    newX = Math.max(minX, Math.min(maxX, newX));
+                    newY = Math.max(minY, Math.min(maxY, newY));
+
+                    setTranslationX(newX);
+                    setTranslationY(newY);
                 }
                 return true;
 
             case MotionEvent.ACTION_UP:
-                cancelLongPress();
-
-                if (isDragging) {
-                    snapToEdge();
-                    scheduleAutoHide();
-                } else if (isLongPressed) {
-                    // Long press cancelled (moved away and released)
-                    playReleaseAnimation();
-                    scheduleAutoHide();
-                } else {
-                    // Normal click
+                if (!isDragging) {
+                    // Normal click (no drag)
                     handleClick();
+                } else {
+                    // Was dragging - snap to nearest edge
+                    snapToNearestEdge();
                 }
 
                 isDragging = false;
-                isLongPressed = false;
                 return true;
 
             case MotionEvent.ACTION_CANCEL:
-                cancelLongPress();
-                playReleaseAnimation();
-                scheduleAutoHide();
+                if (isDragging) {
+                    snapToNearestEdge();
+                } else {
+                    playReleaseAnimation();
+                }
                 isDragging = false;
-                isLongPressed = false;
                 return true;
         }
         return super.onTouchEvent(event);
     }
 
-    private void handleClick() {
-        if (!isExpanded) {
-            // Collapsed state: expand on first click
-            expand();
+    /**
+     * Snap button to the nearest vertical edge (left or right)
+     * Keeps the current Y position unchanged
+     */
+    private void snapToNearestEdge() {
+        float currentX = getTranslationX();
+        float currentY = getTranslationY();
+
+        // Calculate center of button
+        float buttonCenterX = currentX + dpToPx(BUTTON_SIZE) / 2f;
+        float screenCenterX = screenWidth / 2f;
+
+        // Determine target X position (left or right edge)
+        float targetX;
+        if (buttonCenterX < screenCenterX) {
+            // Snap to left edge
+            targetX = dpToPx(MARGIN_FROM_EDGE);
         } else {
-            // Expanded state: trigger click listener
-            playClickAnimation();
-            if (clickListener != null) {
-                postDelayed(() -> clickListener.onClick(this), 200);
-            }
+            // Snap to right edge
+            targetX = screenWidth - dpToPx(BUTTON_SIZE + MARGIN_FROM_EDGE);
         }
+
+        // Save the new position
+        savePosition(targetX, currentY);
+
+        // Animate to target position
+        ObjectAnimator animX = ObjectAnimator.ofFloat(this, "translationX", currentX, targetX);
+        animX.setDuration(SNAP_ANIMATION_DURATION);
+        animX.setInterpolator(new OvershootInterpolator(1.2f));
+
+        // Also play release animation
+        AnimatorSet animSet = new AnimatorSet();
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, "scaleX", 0.9f, 1.0f);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, "scaleY", 0.9f, 1.0f);
+        scaleX.setDuration(200);
+        scaleY.setDuration(200);
+        scaleX.setInterpolator(new OvershootInterpolator());
+        scaleY.setInterpolator(new OvershootInterpolator());
+
+        animSet.playTogether(animX, scaleX, scaleY);
+        animSet.start();
     }
 
-    private void snapToEdge() {
-        float centerX = getTranslationX() + currentSize / 2;
-        boolean snapToLeft = centerX < screenWidth / 2;
-
-        float targetX = snapToLeft ?
-            dpToPx(16) - currentSize / 2 :
-            screenWidth - dpToPx(16) - currentSize / 2;
-
-        ObjectAnimator animator = ObjectAnimator.ofFloat(
-            this, "translationX", getTranslationX(), targetX
-        );
-        animator.setDuration(300);
-        animator.setInterpolator(new OvershootInterpolator());
-        animator.start();
+    /**
+     * Save button position to SharedPreferences
+     */
+    private void savePosition(float x, float y) {
+        prefs.edit()
+            .putFloat(KEY_POSITION_X, x)
+            .putFloat(KEY_POSITION_Y, y)
+            .apply();
     }
 
-    public void collapse() {
-        if (!isExpanded) return;
-
-        isExpanded = false;
-
-        float targetSize = dpToPx(COLLAPSED_SIZE);
-        ValueAnimator animator = ValueAnimator.ofFloat(currentSize, targetSize);
-        animator.setDuration(300);
-        animator.setInterpolator(new AccelerateDecelerateInterpolator());
-        animator.addUpdateListener(anim -> {
-            currentSize = (float) anim.getAnimatedValue();
-            requestLayout();
-            invalidate();
-        });
-        animator.start();
-
-        // Move to edge
-        float currentCenterX = getTranslationX() + getWidth() / 2f;
-        boolean isOnLeft = currentCenterX < screenWidth / 2;
-        float targetX = isOnLeft ? -currentSize * 0.7f : screenWidth - currentSize * 0.3f;
-
-        ObjectAnimator moveAnimator = ObjectAnimator.ofFloat(
-            this, "translationX", getTranslationX(), targetX
-        );
-        moveAnimator.setDuration(300);
-        moveAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-        moveAnimator.start();
-
-        if (stateChangeListener != null) {
-            stateChangeListener.onCollapsed();
-        }
-    }
-
-    public void expand() {
-        if (isExpanded) return;
-
-        isExpanded = true;
-
-        float targetSize = dpToPx(EXPANDED_SIZE);
-        ValueAnimator animator = ValueAnimator.ofFloat(currentSize, targetSize);
-        animator.setDuration(300);
-        animator.setInterpolator(new OvershootInterpolator());
-        animator.addUpdateListener(anim -> {
-            currentSize = (float) anim.getAnimatedValue();
-            requestLayout();
-            invalidate();
-        });
-        animator.start();
-
-        // Move back from edge
-        float currentCenterX = getTranslationX() + getWidth() / 2f;
-        boolean isOnLeft = currentCenterX < screenWidth / 2;
-        float targetX = isOnLeft ? dpToPx(16) : screenWidth - dpToPx(EXPANDED_SIZE) - dpToPx(16);
-
-        ObjectAnimator moveAnimator = ObjectAnimator.ofFloat(
-            this, "translationX", getTranslationX(), targetX
-        );
-        moveAnimator.setDuration(300);
-        moveAnimator.setInterpolator(new OvershootInterpolator());
-        moveAnimator.start();
-
-        scheduleAutoHide();
-
-        if (stateChangeListener != null) {
-            stateChangeListener.onExpanded();
+    private void handleClick() {
+        playClickAnimation();
+        if (clickListener != null) {
+            postDelayed(() -> clickListener.onClick(this), 200);
         }
     }
 
@@ -321,7 +303,7 @@ public class DraggableFloatingButton extends View {
 
     private void playClickAnimation() {
         // Fingerprint-like ripple animation
-        ValueAnimator rippleAnimator = ValueAnimator.ofFloat(0f, currentSize * 1.5f);
+        ValueAnimator rippleAnimator = ValueAnimator.ofFloat(0f, dpToPx(BUTTON_SIZE) * 1.5f);
         rippleAnimator.setDuration(400);
         rippleAnimator.addUpdateListener(anim -> {
             rippleRadius = (float) anim.getAnimatedValue();
@@ -347,41 +329,9 @@ public class DraggableFloatingButton extends View {
         finalSet.start();
     }
 
-    private void scheduleAutoHide() {
-        cancelAutoHide();
-        autoHideHandler.postDelayed(() -> {
-            if (isExpanded) {
-                collapse();
-            }
-        }, AUTO_HIDE_DELAY);
-    }
-
-    private void cancelAutoHide() {
-        autoHideHandler.removeCallbacksAndMessages(null);
-    }
-
-    private void scheduleLongPress() {
-        longPressHandler.postDelayed(() -> {
-            if (!isDragging) {
-                isLongPressed = true;
-                performHapticFeedback(HAPTIC_FEEDBACK_ENABLED);
-            }
-        }, LONG_PRESS_TIMEOUT);
-    }
-
-    private void cancelLongPress() {
-        longPressHandler.removeCallbacksAndMessages(null);
-    }
-
-    public void resetAutoHideTimer() {
-        if (isExpanded) {
-            scheduleAutoHide();
-        }
-    }
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int size = (int) currentSize;
+        int size = (int) dpToPx(BUTTON_SIZE);
         setMeasuredDimension(size, size);
     }
 
@@ -390,18 +340,7 @@ public class DraggableFloatingButton extends View {
         this.clickListener = l;
     }
 
-    public void setOnStateChangeListener(OnStateChangeListener listener) {
-        this.stateChangeListener = listener;
-    }
-
     private float dpToPx(float dp) {
         return dp * getResources().getDisplayMetrics().density;
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        cancelAutoHide();
-        cancelLongPress();
     }
 }

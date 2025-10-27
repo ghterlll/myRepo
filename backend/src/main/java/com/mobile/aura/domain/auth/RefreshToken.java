@@ -1,4 +1,5 @@
 package com.mobile.aura.domain.auth;
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mobile.aura.constant.CommonStatusEnum;
@@ -14,7 +15,7 @@ import java.util.UUID;
 @Data
 @TableName("auth_refresh_token")
 public class RefreshToken {
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
     private Long userId;
     private String deviceId;

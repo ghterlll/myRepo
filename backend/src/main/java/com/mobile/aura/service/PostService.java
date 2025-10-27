@@ -100,6 +100,29 @@ public interface PostService {
      */
     PageResponse<PostCardResp> listFollowFeed(Long viewer, int limit, String cursor);
 
+    /**
+     * Search public posts by keyword with optional category filter.
+     *
+     * @param viewer the ID of the user viewing the search results
+     * @param keyword search keyword (searches in title and caption)
+     * @param category category filter (optional, can be null)
+     * @param limit maximum number of posts to return (1-100)
+     * @param cursor pagination cursor (format: "timestamp|id")
+     * @return paginated response with post cards matching the search criteria
+     */
+    PageResponse<PostCardResp> searchPublic(Long viewer, String keyword, String category, int limit, String cursor);
+
+    /**
+     * List posts created by the current user (my posts).
+     * Includes all posts regardless of status (draft, published, hidden).
+     *
+     * @param authorId the ID of the author (current user)
+     * @param limit maximum number of posts to return (1-100)
+     * @param cursor pagination cursor (format: "timestamp|id")
+     * @return paginated response with post cards created by the user
+     */
+    PageResponse<PostCardResp> listMyPosts(Long authorId, int limit, String cursor);
+
     // ========= Like Operations =========
 
     /**
@@ -120,6 +143,15 @@ public interface PostService {
      */
     void unlike(Long userId, Long postId);
 
+    /**
+     * Check if user has liked a post.
+     *
+     * @param userId the ID of the user
+     * @param postId the ID of the post
+     * @return true if user has liked the post, false otherwise
+     */
+    boolean isLiked(Long userId, Long postId);
+
     // ========= Bookmark Operations =========
 
     /**
@@ -139,6 +171,25 @@ public interface PostService {
      * @throws com.mobile.aura.support.BizException if post was not bookmarked
      */
     void unbookmark(Long userId, Long postId);
+
+    /**
+     * Check if user has bookmarked a post.
+     *
+     * @param userId the ID of the user
+     * @param postId the ID of the post
+     * @return true if user has bookmarked the post, false otherwise
+     */
+    boolean isBookmarked(Long userId, Long postId);
+
+    /**
+     * List posts bookmarked by the user.
+     *
+     * @param userId the ID of the user
+     * @param limit maximum number of posts to return (1-100)
+     * @param cursor pagination cursor (format: "timestamp|id")
+     * @return paginated response with bookmarked post cards
+     */
+    PageResponse<PostCardResp> listBookmarkedPosts(Long userId, int limit, String cursor);
 
     // ========= Comment Operations (Nested Comments) =========
 
@@ -189,4 +240,33 @@ public interface PostService {
      * @throws com.mobile.aura.support.BizException if root comment not found or post not accessible
      */
     PageResponse<CommentResp> listReplies(Long viewer, Long rootCommentId, int limit, String cursor);
+
+    // ========= Comment Like Operations =========
+
+    /**
+     * Like a comment.
+     *
+     * @param userId the ID of the user liking the comment
+     * @param commentId the ID of the comment to like
+     * @throws com.mobile.aura.support.BizException if comment not found or already liked
+     */
+    void likeComment(Long userId, Long commentId);
+
+    /**
+     * Unlike a comment (remove like).
+     *
+     * @param userId the ID of the user unliking the comment
+     * @param commentId the ID of the comment to unlike
+     * @throws com.mobile.aura.support.BizException if comment was not liked
+     */
+    void unlikeComment(Long userId, Long commentId);
+
+    /**
+     * Check if user has liked a comment.
+     *
+     * @param userId the ID of the user
+     * @param commentId the ID of the comment
+     * @return true if user has liked the comment, false otherwise
+     */
+    boolean isCommentLiked(Long userId, Long commentId);
 }

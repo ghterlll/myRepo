@@ -29,4 +29,11 @@ public class PostCreateReq {
     private List<String> tags;
 
     private List<MediaItem> medias;
+
+    // Recommendation system fields (optional)
+    @Size(max = 50, message = "Category must not exceed 50 characters")
+    private String category;  // Content category (defaults to "health" if not provided)
+
+    private Double geoLat;    // Post location latitude
+    private Double geoLon;    // Post location longitude
 }

@@ -47,18 +47,6 @@ public class FileController {
     }
 
     /**
-     * Upload post video
-     */
-    @PostMapping("/post/video")
-    public ResponseResult<?> uploadPostVideo(
-            @RequestAttribute(JwtAuthInterceptor.ATTR_USER_ID) Long userId,
-            @RequestParam("file") MultipartFile file) {
-
-        FileUploadResult result = fileStorageService.uploadPostVideo(userId, file);
-        return ResponseResult.success(result);
-    }
-
-    /**
      * Batch upload images for a post
      */
     @PostMapping("/post/images/batch")

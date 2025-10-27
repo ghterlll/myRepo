@@ -5,6 +5,8 @@ import com.mobile.aura.dto.user.UserBasicInfoResp;
 import com.mobile.aura.dto.user.UserHealthProfileResp;
 import com.mobile.aura.dto.user.UserProfileResp;
 import com.mobile.aura.dto.user.UserProfileUpdateReq;
+import com.mobile.aura.dto.user.UserRecommendationProfileResp;
+import com.mobile.aura.dto.user.UserRecommendationProfileUpdateReq;
 
 import java.util.List;
 
@@ -77,4 +79,27 @@ public interface UserProfileService {
      *         (non-existent user IDs are silently skipped)
      */
     List<UserBasicInfoResp> getBasicInfoBatch(List<Long> userIds);
+
+    /**
+     * Get user's recommendation profile information.
+     * Returns recommendation-related fields including interests, device preference,
+     * recent geos, and activity level.
+     *
+     * @param userId user ID to fetch recommendation profile for
+     * @return recommendation profile response containing recommendation fields,
+     *         returns empty response if profile doesn't exist
+     * @throws com.mobile.aura.support.BizException if user does not exist
+     */
+    UserRecommendationProfileResp getRecommendationProfile(Long userId);
+
+    /**
+     * Update user's recommendation profile fields with partial updates (PATCH semantics).
+     * Only updates the fields provided in the request; null fields are ignored.
+     * Creates a new profile if one doesn't exist (upsert behavior).
+     *
+     * @param userId user ID to update recommendation profile for
+     * @param req request containing recommendation fields to update (null fields are ignored)
+     * @throws com.mobile.aura.support.BizException if user does not exist
+     */
+    void updateRecommendationProfile(Long userId, UserRecommendationProfileUpdateReq req);
 }

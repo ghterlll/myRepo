@@ -88,36 +88,6 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
 
     @Override
-    public FileUploadResult uploadPostVideo(Long userId, MultipartFile file) {
-        try {
-            // Domain model handles validation
-            FileUpload upload = FileUpload.forPostVideo(
-                    userId,
-                    file.getOriginalFilename(),
-                    file.getContentType(),
-                    file.getSize()
-            );
-
-            String key = upload.generatePostVideoKey();
-
-            // Delegate to infrastructure layer
-            String url = s3StorageService.uploadFile(
-                    key,
-                    file.getInputStream(),
-                    upload.getContentType(),
-                    upload.getFileSize()
-            );
-
-            log.info("Post video uploaded for user {}: {}", userId, key);
-            return new FileUploadResult(url, key, upload.getContentType(), upload.getFileSize());
-
-        } catch (IOException e) {
-            log.error("Failed to upload post video for user {}", userId, e);
-            throw new BizException(CommonStatusEnum.FILE_UPLOAD_FAILED);
-        }
-    }
-
-    @Override
     public List<FileUploadResult> uploadPostImagesBatch(Long userId, MultipartFile[] files) {
         if (files.length > MAX_BATCH_SIZE) {
             throw new BizException(CommonStatusEnum.INVALID_PARAM);

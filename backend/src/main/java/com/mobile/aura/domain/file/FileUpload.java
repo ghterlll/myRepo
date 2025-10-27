@@ -13,11 +13,9 @@ import java.util.UUID;
 public class FileUpload {
 
     private static final long MAX_AVATAR_SIZE = 5 * 1024 * 1024;      // 5MB
-    private static final long MAX_IMAGE_SIZE = 10 * 1024 * 1024;      // 10MB
-    private static final long MAX_VIDEO_SIZE = 100 * 1024 * 1024;     // 100MB
+    private static final long MAX_IMAGE_SIZE = 100 * 1024 * 1024;     // 100MB
 
-    private static final String[] ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"};
-    private static final String[] ALLOWED_VIDEO_TYPES = {"video/mp4", "video/webm", "video/quicktime"};
+    private static final String[] ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"};
 
     private final Long userId;
     private final String originalFilename;
@@ -29,8 +27,19 @@ public class FileUpload {
     private FileUpload(Long userId, String originalFilename, String contentType, long fileSize) {
         this.userId = userId;
         this.originalFilename = originalFilename;
-        this.contentType = contentType;
+        // Normalize image/jpg to image/jpeg for consistency
+        this.contentType = normalizeContentType(contentType);
         this.fileSize = fileSize;
+    }
+
+    /**
+     * Normalize content type to standard MIME types
+     */
+    private static String normalizeContentType(String contentType) {
+        if ("image/jpg".equalsIgnoreCase(contentType)) {
+            return "image/jpeg";
+        }
+        return contentType;
     }
 
     /**
@@ -50,16 +59,6 @@ public class FileUpload {
         FileUpload upload = new FileUpload(userId, filename, contentType, size);
         upload.validateSize(MAX_IMAGE_SIZE);
         upload.validateContentType(ALLOWED_IMAGE_TYPES);
-        return upload;
-    }
-
-    /**
-     * Factory method for post video upload
-     */
-    public static FileUpload forPostVideo(Long userId, String filename, String contentType, long size) {
-        FileUpload upload = new FileUpload(userId, filename, contentType, size);
-        upload.validateSize(MAX_VIDEO_SIZE);
-        upload.validateContentType(ALLOWED_VIDEO_TYPES);
         return upload;
     }
 

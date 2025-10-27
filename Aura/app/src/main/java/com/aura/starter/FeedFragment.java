@@ -2,8 +2,7 @@ package com.aura.starter;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,8 +16,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.aura.starter.model.Post;
 import com.aura.starter.widget.DraggableFloatingButton;
 import com.google.android.material.textfield.TextInputEditText;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import android.widget.TextView;
 
 public class FeedFragment extends Fragment {
 
@@ -27,9 +25,7 @@ public class FeedFragment extends Fragment {
     private RecyclerView recycler;
     private PostAdapter adapter;
     private DraggableFloatingButton fabCreate;
-    private boolean isLoading = false;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private TextView etSearch;
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -72,30 +68,54 @@ public class FeedFragment extends Fragment {
                 it.putExtra("post", p);
                 startActivity(it);
             }
-            @Override public void onLike(Post p) { vm.toggleLike(p.id); }
-            @Override public void onBookmark(Post p) { vm.toggleBookmark(p.id); }
+            @Override public void onLike(Post p) {
+                // Convert string ID to Long for API call
+                try {
+                    Long postId = Long.parseLong(p.id);
+                    vm.toggleLike(postId);
+                } catch (NumberFormatException e) {
+                    android.util.Log.e("FeedFragment", "Invalid post ID: " + p.id, e);
+                }
+            }
+            @Override public void onBookmark(Post p) {
+                // Convert string ID to Long for API call
+                try {
+                    Long postId = Long.parseLong(p.id);
+                    vm.toggleBookmark(postId);
+                } catch (NumberFormatException e) {
+                    android.util.Log.e("FeedFragment", "Invalid post ID: " + p.id, e);
+                }
+            }
         });
         recycler.setAdapter(adapter);
 
-        // Observe displayed posts instead of all posts
+        // Observe displayed posts
         vm.getDisplayedPosts().observe(getViewLifecycleOwner(), posts -> {
             if (posts != null) {
                 adapter.submit(posts);
             }
+        });
+
+        // Observe loading state for UI updates
+        vm.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            // Update UI based on loading state if needed
+            android.util.Log.d("FeedFragment", "Loading state: " + isLoading);
+        });
+
+        // Observe pagination state
+        vm.getHasMorePages().observe(getViewLifecycleOwner(), hasMore -> {
+            // Update UI based on pagination state if needed
+            android.util.Log.d("FeedFragment", "Has more pages: " + hasMore);
         });
     }
 
     private void setupSwipeRefresh() {
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setOnRefreshListener(() -> {
-                // Refresh posts - load random 10 posts
+                // Refresh posts - reload from backend
                 vm.refreshPosts();
-                // Stop refresh animation after a short delay
-                mainHandler.postDelayed(() -> {
-                    if (swipeRefreshLayout != null) {
-                        swipeRefreshLayout.setRefreshing(false);
-                    }
-                }, 1000);
+                // Observe loading state to stop refresh animation
+                observeLoadingState();
             });
 
             // Set refresh colors
@@ -107,33 +127,46 @@ public class FeedFragment extends Fragment {
         }
     }
 
+    private void observeLoadingState() {
+        vm.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            if (swipeRefreshLayout != null) {
+                // When loading is complete, stop refresh animation
+                if (!isLoading) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+            }
+        });
+    }
+
     private void setupScrollListener() {
         recycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                // Trigger floating button collapse on scroll
-                if (fabCreate != null && Math.abs(dy) > 0) {
-                    fabCreate.collapse();
-                }
-
-                if (isLoading || !vm.hasMorePages()) return;
-
-                StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
-                if (layoutManager == null) return;
-
-                int[] lastVisibleItemPositions = layoutManager.findLastVisibleItemPositions(null);
-                int lastVisibleItemPosition = getMaxPosition(lastVisibleItemPositions);
-
-                int totalItemCount = layoutManager.getItemCount();
-
-                // Load more when user scrolls to near the end
-                if (lastVisibleItemPosition >= totalItemCount - 3) {
-                    loadMorePosts();
+                // Check if we should load more posts
+                if (shouldLoadMorePosts(recyclerView)) {
+                    vm.loadMorePosts();
                 }
             }
         });
+    }
+
+    private boolean shouldLoadMorePosts(RecyclerView recyclerView) {
+        StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
+        if (layoutManager == null) return false;
+
+        int[] lastVisibleItemPositions = layoutManager.findLastVisibleItemPositions(null);
+        int lastVisibleItemPosition = getMaxPosition(lastVisibleItemPositions);
+        int totalItemCount = layoutManager.getItemCount();
+
+        // Load more when user scrolls to near the end (3 items before the end)
+        Boolean hasMore = vm.getHasMorePages().getValue();
+        Boolean isLoading = vm.getIsLoading().getValue();
+
+        return lastVisibleItemPosition >= totalItemCount - 3 &&
+               (hasMore == null || hasMore) &&
+               (isLoading == null || !isLoading);
     }
 
     private int getMaxPosition(int[] positions) {
@@ -147,23 +180,8 @@ public class FeedFragment extends Fragment {
     }
 
     private void loadMorePosts() {
-        if (isLoading || !vm.hasMorePages()) return;
-
-        isLoading = true;
-
-        // Simulate loading delay
-        executor.execute(() -> {
-            try {
-                Thread.sleep(500); // Simulate network delay
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            mainHandler.post(() -> {
-                vm.loadMorePosts();
-                isLoading = false;
-            });
-        });
+        // 移除这个方法，因为现在ViewModel直接处理API调用
+        // vm.loadMorePosts() 会在shouldLoadMorePosts()中被调用
     }
 
     /**
@@ -179,18 +197,6 @@ public class FeedFragment extends Fragment {
                     .addToBackStack(null)
                     .commit();
             });
-
-            fabCreate.setOnStateChangeListener(new DraggableFloatingButton.OnStateChangeListener() {
-                @Override
-                public void onExpanded() {
-                    // Optional: handle expanded state
-                }
-
-                @Override
-                public void onCollapsed() {
-                    // Optional: handle collapsed state
-                }
-            });
         }
     }
 
@@ -198,38 +204,28 @@ public class FeedFragment extends Fragment {
      * Setup search bar functionality
      */
     private void setupSearchBar(View view) {
-        TextInputEditText etSearch = view.findViewById(R.id.etSearch);
+        View searchBar = view.findViewById(R.id.searchBar);
+        etSearch = view.findViewById(R.id.etSearch);
 
-        // Add click listener to open search page
-        etSearch.setOnClickListener(v -> {
-            // Navigate to search activity
+        // Click listener for opening search activity
+        View.OnClickListener openSearchListener = v -> {
             Intent intent = new Intent(requireContext(), SearchActivity.class);
             startActivity(intent);
+        };
 
-            // Add visual feedback (optional)
-            v.animate()
-                .scaleX(0.95f)
-                .scaleY(0.95f)
-                .setDuration(100)
-                .withEndAction(() -> {
-                    v.animate()
-                        .scaleX(1.0f)
-                        .scaleY(1.0f)
-                        .setDuration(100)
-                        .start();
-                })
-                .start();
-        });
+        // Add click listener to both searchBar and etSearch
+        searchBar.setOnClickListener(openSearchListener);
+        etSearch.setOnClickListener(openSearchListener);
 
-        // Make the search field a navigation button (not editable)
+        // Make sure etSearch doesn't block clicks (TextView, not EditText)
         etSearch.setFocusable(false);
         etSearch.setClickable(true);
-        etSearch.setCursorVisible(false);
     }
+
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        executor.shutdown();
+        // No cleanup needed for ViewModel-based approach
     }
 }

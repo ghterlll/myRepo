@@ -1,8 +1,5 @@
 package com.aura.starter;
 
-import android.content.res.AssetManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,10 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.aura.starter.model.Post;
-import com.bumptech.glide.Glide;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import com.aura.starter.util.GlideUtils;
+import com.aura.starter.util.PostInteractionManager;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +18,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
     public interface Listener { void onOpen(Post p); void onLike(Post p); void onBookmark(Post p); }
     private final Listener listener;
     private final List<Post> data = new ArrayList<>();
+    private PostInteractionManager interactionManager;
+
     public PostAdapter(Listener l){ this.listener=l; }
 
     public void submit(List<Post> list){
@@ -37,54 +34,49 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
     }
 
     @Override public void onBindViewHolder(@NonNull VH h, int i) {
-        com.aura.starter.model.Post p = data.get(i);
-        h.tvTitle.setText(p.title);
-        h.tvAuthor.setText(p.author);
+        Post p = data.get(i);
 
-        // 处理图片显示
-        if (p.imageUri != null && !p.imageUri.isEmpty()){
-            // 如果是图片文件路径，加载图片
-            if (p.imageUri.startsWith("/data/") || p.imageUri.contains("cache") || p.imageUri.contains("Pictures")) {
-                // 文件路径
-                Glide.with(h.imgCover.getContext()).load(new File(p.imageUri)).placeholder(R.drawable.placeholder).into(h.imgCover);
-            } else if (p.imageUri.startsWith("img") && p.imageUri.length() <= 5) {
-                // Assets图片
-                try {
-                    AssetManager assetManager = h.imgCover.getContext().getAssets();
-                    InputStream inputStream = assetManager.open("images/" + p.imageUri + ".png");
-                    Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                    inputStream.close();
-
-                    if (bitmap != null) {
-                        Glide.with(h.imgCover.getContext()).load(bitmap).placeholder(R.drawable.placeholder).into(h.imgCover);
-                    } else {
-                        h.imgCover.setImageResource(R.drawable.placeholder);
-                    }
-                } catch (IOException e) {
-                    // assets中找不到图片，使用占位符
-                    h.imgCover.setImageResource(R.drawable.placeholder);
-                }
-            } else {
-                // 其他类型的图片URI（drawable资源ID或网络图片）
-                try {
-                    // 尝试作为资源ID加载
-                    int resourceId = Integer.parseInt(p.imageUri);
-                    Glide.with(h.imgCover.getContext()).load(resourceId).placeholder(R.drawable.placeholder).into(h.imgCover);
-                } catch (NumberFormatException e) {
-                    // 不是资源ID，作为普通URI加载
-                    Glide.with(h.imgCover.getContext()).load(p.imageUri).placeholder(R.drawable.placeholder).into(h.imgCover);
-                }
-            }
-        } else {
-            h.imgCover.setImageResource(R.drawable.placeholder);
+        // Initialize interaction manager lazily
+        if (interactionManager == null) {
+            interactionManager = PostInteractionManager.getInstance(h.itemView.getContext());
         }
 
+        // Load interaction state from local storage
+        p.liked = interactionManager.isLiked(p.id);
+        p.bookmarked = interactionManager.isBookmarked(p.id);
+
+        h.tvTitle.setText(p.title);
+        // Display author nickname if available, otherwise fall back to author ID
+        h.tvAuthor.setText(p.authorNickname != null ? p.authorNickname : p.author);
+
+        // Handle image display using unified GlideUtils
+        GlideUtils.loadImage(h.imgCover.getContext(), p.imageUri, h.imgCover);
+
         h.itemView.setOnClickListener(v -> listener.onOpen(p));
+
+        // Set icon state based on local storage
         h.btnLike.setImageResource(p.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
         h.btnBookmark.setImageResource(p.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
 
-        h.btnLike.setOnClickListener(v -> listener.onLike(p));
-        h.btnBookmark.setOnClickListener(v -> listener.onBookmark(p));
+        // Like button - update local state and UI immediately
+        h.btnLike.setOnClickListener(v -> {
+            // Toggle state immediately for visual feedback
+            p.liked = !p.liked;
+            interactionManager.setLiked(p.id, p.liked);
+            h.btnLike.setImageResource(p.liked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+            // Notify listener to sync with backend
+            listener.onLike(p);
+        });
+
+        // Bookmark button - update local state and UI immediately
+        h.btnBookmark.setOnClickListener(v -> {
+            // Toggle state immediately for visual feedback
+            p.bookmarked = !p.bookmarked;
+            interactionManager.setBookmarked(p.id, p.bookmarked);
+            h.btnBookmark.setImageResource(p.bookmarked ? R.drawable.ic_bookmark_filled : R.drawable.ic_bookmark_outline);
+            // Notify listener to sync with backend
+            listener.onBookmark(p);
+        });
     }
 
     @Override public int getItemCount(){ return data.size(); }

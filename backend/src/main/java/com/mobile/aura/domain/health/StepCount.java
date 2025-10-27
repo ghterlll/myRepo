@@ -1,5 +1,6 @@
 package com.mobile.aura.domain.health;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mobile.aura.constant.CommonStatusEnum;
@@ -39,7 +40,7 @@ public class StepCount {
     private static final int STEPS_PER_MINUTE = 100; // Estimated active pace
     private static final double CALORIE_FACTOR = 0.00045; // Calories per step per kg
 
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
     private Long userId;
     private LocalDate recordDate;

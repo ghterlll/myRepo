@@ -3,6 +3,7 @@ package com.aura.starter.network;
 import com.aura.starter.network.models.*;
 
 import java.util.List;
+import java.util.Map;
 import okhttp3.MultipartBody;
 import retrofit2.Call;
 import retrofit2.http.*;
@@ -27,12 +28,15 @@ public interface ApiService {
     Call<ApiResponse<TokenResponse>> refreshToken(@Body RefreshTokenRequest request);
     
     // ==================== user info ====================
-    
+
     @GET("api/v1/user/me")
     Call<ApiResponse<UserProfileResponse>> getMyProfile();
-    
+
     @PATCH("api/v1/user/me/profile")
     Call<ApiResponse<Void>> updateMyProfile(@Body UserProfileUpdateRequest request);
+
+    @GET("api/v1/user/me/statistics")
+    Call<ApiResponse<UserStatisticsResponse>> getMyStatistics();
     
     // ==================== intake record ====================
     
@@ -148,6 +152,128 @@ public interface ApiService {
 
     @GET("api/test/hello")
     Call<String> hello();
+
+
+    // ==================== posts ====================
+
+    @POST("api/v1/post")
+    Call<ApiResponse<Map<String, Long>>> createPost(@Body PostCreateRequest request);
+
+    @GET("api/v1/post")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> listPosts(
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
+
+    @GET("api/v1/post/feed/followings")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> listFollowingPosts(
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
+
+    @GET("api/v1/post/{postId}")
+    Call<ApiResponse<PostDetailResponse>> getPostDetail(@Path("postId") Long postId);
+
+    @PATCH("api/v1/post/{postId}")
+    Call<ApiResponse<Void>> updatePost(@Path("postId") Long postId, @Body PostUpdateRequest request);
+
+    @DELETE("api/v1/post/{postId}")
+    Call<ApiResponse<Void>> deletePost(@Path("postId") Long postId);
+
+    @POST("api/v1/post/{postId}/publish")
+    Call<ApiResponse<Void>> publishPost(@Path("postId") Long postId);
+
+    @POST("api/v1/post/{postId}/hide")
+    Call<ApiResponse<Void>> hidePost(@Path("postId") Long postId);
+
+    @PUT("api/v1/post/{postId}/media")
+    Call<ApiResponse<Void>> replacePostMedia(@Path("postId") Long postId, @Body List<MediaItem> medias);
+
+    // ==================== likes and bookmarks ====================
+
+    @POST("api/v1/post/{postId}/like")
+    Call<ApiResponse<Void>> likePost(@Path("postId") Long postId);
+
+    @DELETE("api/v1/post/{postId}/like")
+    Call<ApiResponse<Void>> unlikePost(@Path("postId") Long postId);
+
+    @GET("api/v1/post/{postId}/like/status")
+    Call<ApiResponse<Map<String, Boolean>>> checkLikeStatus(@Path("postId") Long postId);
+
+    @POST("api/v1/post/{postId}/bookmark")
+    Call<ApiResponse<Void>> bookmarkPost(@Path("postId") Long postId);
+
+    @DELETE("api/v1/post/{postId}/bookmark")
+    Call<ApiResponse<Void>> unbookmarkPost(@Path("postId") Long postId);
+
+    @GET("api/v1/post/{postId}/bookmark/status")
+    Call<ApiResponse<Map<String, Boolean>>> checkBookmarkStatus(@Path("postId") Long postId);
+
+    // ==================== comments ====================
+
+    @POST("api/v1/post/{postId}/comments")
+    Call<ApiResponse<Map<String, Long>>> createComment(@Path("postId") Long postId, @Body CommentCreateRequest request);
+
+    @GET("api/v1/post/{postId}/comments")
+    Call<ApiResponse<PageResponse<CommentThreadResponse>>> listComments(
+            @Path("postId") Long postId,
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor,
+            @Query("previewSize") Integer previewSize
+    );
+
+    @POST("api/v1/post/comments/{commentId}/like")
+    Call<ApiResponse<Void>> likeComment(@Path("commentId") Long commentId);
+
+    @DELETE("api/v1/post/comments/{commentId}/like")
+    Call<ApiResponse<Void>> unlikeComment(@Path("commentId") Long commentId);
+
+    @GET("api/v1/post/comments/{commentId}/like/status")
+    Call<ApiResponse<Map<String, Boolean>>> checkCommentLikeStatus(@Path("commentId") Long commentId);
+
+    @DELETE("api/v1/post/comments/{commentId}")
+    Call<ApiResponse<Void>> deleteComment(@Path("commentId") Long commentId);
+
+    @GET("api/v1/post/comments/{rootCommentId}/replies")
+    Call<ApiResponse<PageResponse<CommentResponse>>> listCommentReplies(
+            @Path("rootCommentId") Long rootCommentId,
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
+
+    // ==================== search ====================
+
+    @GET("api/v1/post/search")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> searchPosts(
+            @Query("keyword") String keyword,
+            @Query("category") String category,
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
+
+    @GET("api/v1/post/me")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> listMyPosts(
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
+
+    @GET("api/v1/post/bookmarks")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> listBookmarkedPosts(
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
+
+    @GET("api/v1/tag")
+    Call<ApiResponse<PageResponse<TagResponse>>> searchTags(
+            @Query("q") String query,
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
+
+    @GET("api/v1/tag/{tagId}/posts")
+    Call<ApiResponse<PageResponse<PostCardResponse>>> getPostsByTag(
+            @Path("tagId") Long tagId,
+            @Query("limit") Integer limit,
+            @Query("cursor") String cursor
+    );
 }
-
-
