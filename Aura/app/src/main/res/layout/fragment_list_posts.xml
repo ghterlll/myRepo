@@ -63,5 +63,5 @@
             android:clipToPadding="false"
             android:nestedScrollingEnabled="false"/>
 
-    </androidx.swiperefreshLayout.widget.SwipeRefreshLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </LinearLayout>
