@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class BookmarksFragment extends Fragment {
+    private static final String TAG = "BookmarksFragment_DEBUG";
     private FeedViewModel vm;
     private PostRepository postRepo;
     private List<Post> current = new ArrayList<>();
@@ -43,7 +44,15 @@ public class BookmarksFragment extends Fragment {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private PostInteractionManager interactionManager;
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        android.util.Log.e(TAG, "========== onCreate() called ==========");
+        android.widget.Toast.makeText(requireContext(), "Bookmarks: onCreate", android.widget.Toast.LENGTH_SHORT).show();
+    }
+
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle s){
+        android.util.Log.e(TAG, "========== onCreateView() called ==========");
         View v = inf.inflate(R.layout.fragment_list_posts, c, false);
         vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
         postRepo = PostRepository.getInstance();
@@ -67,21 +76,38 @@ public class BookmarksFragment extends Fragment {
         setupSortingButtons(v);
 
         // Load bookmarked posts from backend API
+        android.util.Log.e(TAG, "========== About to call loadBookmarkedPosts() ==========");
+        android.widget.Toast.makeText(requireContext(), "Bookmarks: About to load data", android.widget.Toast.LENGTH_SHORT).show();
         loadBookmarkedPosts();
 
         return v;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        android.util.Log.e(TAG, "========== onResume() called ==========");
+        android.widget.Toast.makeText(requireContext(), "Bookmarks: onResume", android.widget.Toast.LENGTH_SHORT).show();
+    }
+
     private void loadBookmarkedPosts() {
-        if (isLoading) return;
-        
+        android.util.Log.e(TAG, "loadBookmarkedPosts() ENTERED - isLoading=" + isLoading);
+        if (isLoading) {
+            android.util.Log.e(TAG, "loadBookmarkedPosts() SKIPPED - already loading");
+            return;
+        }
+
+        android.util.Log.e(TAG, "loadBookmarkedPosts() STARTING API CALL");
+        android.widget.Toast.makeText(requireContext(), "Bookmarks: API call starting...", android.widget.Toast.LENGTH_LONG).show();
         isLoading = true;
         postRepo.listBookmarkedPosts(20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
             @Override
             public void onSuccess(PageResponse<PostCardResponse> response) {
+                android.util.Log.e(TAG, "API SUCCESS - received " + response.getItems().size() + " bookmarks");
+                android.widget.Toast.makeText(requireContext(), "Bookmarks: API SUCCESS - " + response.getItems().size() + " posts", android.widget.Toast.LENGTH_LONG).show();
                 mainHandler.post(() -> {
                     List<Post> newPosts = convertPostCardResponseToPosts(response.getItems());
-                    
+
                     if (currentCursor == null) {
                         // Initial load
                         current.clear();
@@ -90,19 +116,21 @@ public class BookmarksFragment extends Fragment {
                         // Load more
                         current.addAll(newPosts);
                     }
-                    
+
                     currentCursor = response.getNextCursor();
                     hasMorePages = response.getHasMore();
                     isLoading = false;
-                    
+
+                    android.util.Log.e(TAG, "About to sort and display " + current.size() + " bookmarks");
                     sortByTime();
                 });
             }
 
             @Override
             public void onError(String message) {
+                android.util.Log.e(TAG, "API ERROR: " + message);
+                android.widget.Toast.makeText(requireContext(), "Bookmarks: API ERROR - " + message, android.widget.Toast.LENGTH_LONG).show();
                 mainHandler.post(() -> {
-                    android.util.Log.e("BookmarksFragment", "Load bookmarks failed: " + message);
                     isLoading = false;
                     if (swipeRefreshLayout != null) {
                         swipeRefreshLayout.setRefreshing(false);

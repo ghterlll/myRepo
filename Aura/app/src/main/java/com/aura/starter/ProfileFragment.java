@@ -32,6 +32,7 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class ProfileFragment extends Fragment {
+    private static final String TAG = "ProfileFragment_DEBUG";
     private ProfileRepository profileRepo;
     private UserRepository userRepo = UserRepository.getInstance();
     private ImageView imgAvatar, imgCover;
@@ -50,6 +51,8 @@ public class ProfileFragment extends Fragment {
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        android.util.Log.e(TAG, "========== ProfileFragment onCreateView() called ==========");
+        android.widget.Toast.makeText(requireContext(), "Profile: onCreateView", android.widget.Toast.LENGTH_SHORT).show();
         View v = inflater.inflate(R.layout.fragment_profile, container, false);
         FeedViewModel vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
         profileRepo = ProfileRepository.get(requireContext());
@@ -113,11 +116,19 @@ public class ProfileFragment extends Fragment {
         v.findViewById(R.id.theme3).setOnClickListener(vw -> profileRepo.setTheme(3));
 
         // Tabs + pager
+        android.util.Log.e(TAG, "========== Setting up ViewPager2 ==========");
         com.aura.starter.util.WrapContentViewPager2 viewPagerWrapper = v.findViewById(R.id.viewPager);
         ViewPager2 pager = viewPagerWrapper.getViewPager2();
         TabLayout tabs = v.findViewById(R.id.tabLayout);
+
+        android.util.Log.e(TAG, "Setting adapter to ViewPager2");
         pager.setAdapter(new ProfilePagerAdapter(this));
+
+        android.util.Log.e(TAG, "Setting offscreenPageLimit to 2");
         pager.setOffscreenPageLimit(2); // Preload both tabs immediately
+
+        android.util.Log.e(TAG, "Attaching TabLayoutMediator");
+        android.widget.Toast.makeText(requireContext(), "Profile: ViewPager setup complete", android.widget.Toast.LENGTH_SHORT).show();
         new TabLayoutMediator(tabs, pager, (tab, pos) -> {
             tab.setText(pos==0 ? getString(R.string.tab_posts) : getString(R.string.tab_bookmarks));
         }).attach();

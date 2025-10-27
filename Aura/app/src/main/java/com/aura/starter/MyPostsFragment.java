@@ -26,6 +26,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 public class MyPostsFragment extends Fragment {
+    private static final String TAG = "MyPostsFragment_DEBUG";
     private FeedViewModel vm;
     private PostRepository postRepo;
     private List<Post> current = new ArrayList<>();
@@ -36,7 +37,15 @@ public class MyPostsFragment extends Fragment {
     private boolean isLoading = false;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        android.util.Log.e(TAG, "========== onCreate() called ==========");
+        android.widget.Toast.makeText(requireContext(), "MyPosts: onCreate", android.widget.Toast.LENGTH_SHORT).show();
+    }
+
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle s){
+        android.util.Log.e(TAG, "========== onCreateView() called ==========");
         View v = inf.inflate(R.layout.fragment_list_posts, c, false);
         vm = new ViewModelProvider(requireActivity()).get(FeedViewModel.class);
         postRepo = PostRepository.getInstance();
@@ -74,20 +83,37 @@ public class MyPostsFragment extends Fragment {
         sortLikes.setOnClickListener(btn -> sortByLikes());
 
         // Load my posts from backend API
+        android.util.Log.e(TAG, "========== About to call loadMyPosts() ==========");
+        android.widget.Toast.makeText(requireContext(), "MyPosts: About to load data", android.widget.Toast.LENGTH_SHORT).show();
         loadMyPosts();
         return v;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        android.util.Log.e(TAG, "========== onResume() called ==========");
+        android.widget.Toast.makeText(requireContext(), "MyPosts: onResume", android.widget.Toast.LENGTH_SHORT).show();
+    }
+
     private void loadMyPosts() {
-        if (isLoading) return;
-        
+        android.util.Log.e(TAG, "loadMyPosts() ENTERED - isLoading=" + isLoading);
+        if (isLoading) {
+            android.util.Log.e(TAG, "loadMyPosts() SKIPPED - already loading");
+            return;
+        }
+
+        android.util.Log.e(TAG, "loadMyPosts() STARTING API CALL");
+        android.widget.Toast.makeText(requireContext(), "MyPosts: API call starting...", android.widget.Toast.LENGTH_LONG).show();
         isLoading = true;
         postRepo.listMyPosts(20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
             @Override
             public void onSuccess(PageResponse<PostCardResponse> response) {
+                android.util.Log.e(TAG, "API SUCCESS - received " + response.getItems().size() + " posts");
+                android.widget.Toast.makeText(requireContext(), "MyPosts: API SUCCESS - " + response.getItems().size() + " posts", android.widget.Toast.LENGTH_LONG).show();
                 mainHandler.post(() -> {
                     List<Post> newPosts = convertPostCardResponseToPosts(response.getItems());
-                    
+
                     if (currentCursor == null) {
                         // Initial load
                         current.clear();
@@ -96,19 +122,21 @@ public class MyPostsFragment extends Fragment {
                         // Load more
                         current.addAll(newPosts);
                     }
-                    
+
                     currentCursor = response.getNextCursor();
                     hasMorePages = response.getHasMore();
                     isLoading = false;
-                    
+
+                    android.util.Log.e(TAG, "About to sort and display " + current.size() + " posts");
                     sortByTime();
                 });
             }
 
             @Override
             public void onError(String message) {
+                android.util.Log.e(TAG, "API ERROR: " + message);
+                android.widget.Toast.makeText(requireContext(), "MyPosts: API ERROR - " + message, android.widget.Toast.LENGTH_LONG).show();
                 mainHandler.post(() -> {
-                    android.util.Log.e("MyPostsFragment", "Load my posts failed: " + message);
                     isLoading = false;
                 });
             }
