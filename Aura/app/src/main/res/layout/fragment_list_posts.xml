@@ -50,15 +50,16 @@
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="wrap_content"
+        android:enabled="false">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:padding="8dp"
-            android:clipToPadding="false"/>
+            android:clipToPadding="false"
+            android:nestedScrollingEnabled="false"/>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </LinearLayout>
