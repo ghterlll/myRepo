@@ -231,4 +231,14 @@ public class MyPostsFragment extends Fragment {
         }
         adapter.submit(sorted);
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh adapter to update interaction states from SharedPreferences
+        // This ensures that like/bookmark changes made in PostDetailActivity are reflected
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+    }
 }

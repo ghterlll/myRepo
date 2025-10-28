@@ -17,6 +17,8 @@ import com.aura.starter.model.Post;
 import com.aura.starter.widget.DraggableFloatingButton;
 import com.google.android.material.textfield.TextInputEditText;
 import android.widget.TextView;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FeedFragment extends Fragment {
 
@@ -66,6 +68,18 @@ public class FeedFragment extends Fragment {
             @Override public void onOpen(Post p) {
                 Intent it = new Intent(requireContext(), PostDetailActivity.class);
                 it.putExtra("post", p);
+
+                // Pass the entire post list for swipe navigation
+                List<Post> displayedPosts = vm.getDisplayedPosts().getValue();
+                if (displayedPosts != null && !displayedPosts.isEmpty()) {
+                    ArrayList<Post> postList = new ArrayList<>(displayedPosts);
+                    it.putExtra("post_list", postList);
+
+                    // Find and pass the position of clicked post
+                    int position = displayedPosts.indexOf(p);
+                    it.putExtra("position", position);
+                }
+
                 startActivity(it);
             }
             @Override public void onLike(Post p) {
@@ -212,6 +226,16 @@ public class FeedFragment extends Fragment {
         etSearch.setClickable(true);
     }
 
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh adapter to update interaction states from SharedPreferences
+        // This ensures that like/bookmark changes made in PostDetailActivity are reflected
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+    }
 
     @Override
     public void onDestroy() {

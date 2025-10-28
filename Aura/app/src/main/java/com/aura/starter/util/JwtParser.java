@@ -56,14 +56,14 @@ public class JwtParser {
                 return null;
             }
 
+        } catch (NumberFormatException e) {
+            Log.e(TAG, "UserId parse error", e);
+            return null;
         } catch (IllegalArgumentException e) {
             Log.e(TAG, "Base64 decode error", e);
             return null;
         } catch (JSONException e) {
             Log.e(TAG, "JSON parse error", e);
-            return null;
-        } catch (NumberFormatException e) {
-            Log.e(TAG, "UserId parse error", e);
             return null;
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error parsing JWT", e);

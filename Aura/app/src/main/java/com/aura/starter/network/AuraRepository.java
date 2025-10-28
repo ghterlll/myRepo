@@ -78,22 +78,26 @@ public class AuraRepository {
      */
     public ApiResponse<TokenResponse> verifyRegistration(String email, String code) throws IOException {
         VerifyRegistrationRequest request = new VerifyRegistrationRequest(
-                email, 
-                code, 
+                email,
+                code,
                 authManager.getDeviceId()
         );
         Response<ApiResponse<TokenResponse>> response = apiService.verifyRegistration(request).execute();
-        
+
         if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
             TokenResponse tokenData = response.body().getData();
-            // Save tokens
+
+            // Parse userId from JWT token
+            Long userId = com.aura.starter.util.JwtParser.extractUserId(tokenData.getAccessToken());
+
+            // Save tokens with parsed userId
             authManager.saveLoginInfo(
                     tokenData.getAccessToken(),
                     tokenData.getRefreshToken(),
-                    null  // userId is parsed from token or fetched via /users/me later
+                    userId  // userId extracted from JWT
             );
         }
-        
+
         return response.body();
     }
 

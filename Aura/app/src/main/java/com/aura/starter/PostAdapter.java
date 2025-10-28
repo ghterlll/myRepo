@@ -46,8 +46,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
         p.bookmarked = interactionManager.isBookmarked(p.id);
 
         h.tvTitle.setText(p.title);
-        // Display author nickname if available, otherwise fall back to author ID
-        h.tvAuthor.setText(p.authorNickname != null ? p.authorNickname : p.author);
+        // Display author nickname if available (not null and not empty), otherwise fall back to author ID
+        h.tvAuthor.setText((p.authorNickname != null && !p.authorNickname.trim().isEmpty()) ? p.authorNickname : p.author);
 
         // Handle image display using unified GlideUtils
         GlideUtils.loadImage(h.imgCover.getContext(), p.imageUri, h.imgCover);

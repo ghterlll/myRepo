@@ -23,7 +23,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Search results activity showing filtered posts based on search query
+ * Search results activity showing filtered posts based on search query or tag
+ * Supports two modes:
+ * - Keyword search: search_query extra
+ * - Tag search: search_mode="TAG", tag_id, tag_name extras
  * Uses the same layout as feed but with filtered results and pagination support
  */
 public class SearchResultsActivity extends AppCompatActivity {
@@ -35,7 +38,13 @@ public class SearchResultsActivity extends AppCompatActivity {
     private PostAdapter adapter;
     private TextView tvNoResults;
 
+    // Search mode fields
+    private enum SearchMode { KEYWORD, TAG }
+    private SearchMode searchMode = SearchMode.KEYWORD;
     private String searchQuery;
+    private Long tagId;
+    private String tagName;
+
     private String currentCursor = null;
     private boolean hasMorePages = true;
     private boolean isLoading = false;
@@ -48,14 +57,33 @@ public class SearchResultsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search_results);
 
-        // Get search query from intent
-        searchQuery = getIntent().getStringExtra("search_query");
-        if (TextUtils.isEmpty(searchQuery)) {
-            finish(); // No search query, close activity
-            return;
+        // Determine search mode from intent
+        Intent intent = getIntent();
+        String mode = intent.getStringExtra("search_mode");
+
+        if ("TAG".equals(mode)) {
+            // Tag search mode
+            searchMode = SearchMode.TAG;
+            tagId = intent.getLongExtra("tag_id", -1L);
+            tagName = intent.getStringExtra("tag_name");
+
+            if (tagId == -1L || TextUtils.isEmpty(tagName)) {
+                finish(); // Invalid tag data
+                return;
+            }
+        } else {
+            // Keyword search mode (default)
+            searchMode = SearchMode.KEYWORD;
+            searchQuery = intent.getStringExtra("search_query");
+
+            if (TextUtils.isEmpty(searchQuery)) {
+                finish(); // No search query, close activity
+                return;
+            }
         }
 
         initializeViews();
+        setupViewModel();
         setupRecyclerView();
         // Note: Removed setupSwipeRefresh() call for search results page as per requirements
         setupSearchFunctionality();
@@ -67,6 +95,10 @@ public class SearchResultsActivity extends AppCompatActivity {
         tvNoResults = findViewById(R.id.tvNoResults);
         recycler = findViewById(R.id.recycler);
         // Note: Removed SwipeRefreshLayout for search results page as per requirements
+    }
+
+    private void setupViewModel() {
+        viewModel = new ViewModelProvider(this).get(FeedViewModel.class);
     }
 
     private void setupRecyclerView() {
@@ -132,8 +164,8 @@ public class SearchResultsActivity extends AppCompatActivity {
 
         isLoading = true;
 
-        // Load next page from backend
-        postRepo.searchPosts(searchQuery, null, 20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
+        // Create callback for handling results
+        PostRepository.ResultCallback<PageResponse<PostCardResponse>> callback = new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
             @Override
             public void onSuccess(PageResponse<PostCardResponse> response) {
                 runOnUiThread(() -> {
@@ -167,12 +199,23 @@ public class SearchResultsActivity extends AppCompatActivity {
                     isLoading = false;
                 });
             }
-        });
+        };
+
+        // Load next page based on search mode
+        if (searchMode == SearchMode.TAG) {
+            postRepo.getPostsByTag(tagId, 20, currentCursor, callback);
+        } else {
+            postRepo.searchPosts(searchQuery, null, 20, currentCursor, callback);
+        }
     }
 
     private void setupSearchFunctionality() {
-        // Set current search query in search box
-        etSearch.setText(searchQuery);
+        // Set current search query/tag in search box
+        if (searchMode == SearchMode.TAG) {
+            etSearch.setText("#" + tagName);
+        } else {
+            etSearch.setText(searchQuery);
+        }
 
         // Handle search action (IME search button) - NOT ALLOWED in results page
         etSearch.setOnEditorActionListener((v, actionId, event) -> {
@@ -217,8 +260,8 @@ public class SearchResultsActivity extends AppCompatActivity {
         hasMorePages = true;
         currentPosts.clear(); // Clear previous search results
 
-        // Search posts using backend API
-        postRepo.searchPosts(searchQuery, null, 20, currentCursor, new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
+        // Create callback for handling results
+        PostRepository.ResultCallback<PageResponse<PostCardResponse>> callback = new PostRepository.ResultCallback<PageResponse<PostCardResponse>>() {
             @Override
             public void onSuccess(PageResponse<PostCardResponse> response) {
                 runOnUiThread(() -> {
@@ -253,18 +296,41 @@ public class SearchResultsActivity extends AppCompatActivity {
                     updateResults(new ArrayList<>());
                 });
             }
-        });
+        };
+
+        // Perform search based on mode
+        if (searchMode == SearchMode.TAG) {
+            postRepo.getPostsByTag(tagId, 20, currentCursor, callback);
+        } else {
+            postRepo.searchPosts(searchQuery, null, 20, currentCursor, callback);
+        }
     }
 
     private void updateResults(List<Post> results) {
         if (results.isEmpty()) {
             recycler.setVisibility(View.GONE);
             tvNoResults.setVisibility(View.VISIBLE);
-            tvNoResults.setText("No results found for \"" + searchQuery + "\"");
+
+            // Show appropriate message based on search mode
+            if (searchMode == SearchMode.TAG) {
+                tvNoResults.setText("No posts found for tag #" + tagName);
+            } else {
+                tvNoResults.setText("No results found for \"" + searchQuery + "\"");
+            }
         } else {
             recycler.setVisibility(View.VISIBLE);
             tvNoResults.setVisibility(View.GONE);
             adapter.submit(results);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh adapter to update interaction states from SharedPreferences
+        // This ensures that like/bookmark changes made in PostDetailActivity are reflected
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
         }
     }
 

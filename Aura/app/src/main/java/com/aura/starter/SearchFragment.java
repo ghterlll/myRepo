@@ -16,6 +16,11 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.aura.starter.network.PostRepository;
+import com.aura.starter.network.models.PageResponse;
+import com.aura.starter.network.models.TagResponse;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -37,21 +42,23 @@ public class SearchFragment extends Fragment {
     private static final int MAX_HISTORY_ITEMS = 5;
 
     private EditText etSearch;
-    private RecyclerView recyclerHotTerms;
+    private RecyclerView recyclerHotTags;
     private RecyclerView recyclerHistory;
     private TextView tvClearAll;
-
-    // Hot search terms (fitness, diet, plan, recipe, outcome)
-    private final List<String> hotSearchTerms = Arrays.asList("fitness", "diet", "plan", "recipe", "outcome");
+    private PostRepository postRepo;
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_search, container, false);
 
+        // Initialize repository
+        postRepo = PostRepository.getInstance();
+
         initializeViews(view);
         setupRecyclerViews();
         setupSearchFunctionality();
         loadSearchHistory();
+        loadHotTags();
 
         // Setup clear all history button
         if (tvClearAll != null) {
@@ -81,7 +88,7 @@ public class SearchFragment extends Fragment {
 
     private void initializeViews(View view) {
         etSearch = view.findViewById(R.id.etSearch);
-        recyclerHotTerms = view.findViewById(R.id.recyclerHotTerms);
+        recyclerHotTags = view.findViewById(R.id.recyclerHotTags);
         recyclerHistory = view.findViewById(R.id.recyclerHistory);
         tvClearAll = view.findViewById(R.id.tvClearAll);
 
@@ -103,10 +110,17 @@ public class SearchFragment extends Fragment {
     }
 
     private void setupRecyclerViews() {
-        // Hot terms - horizontal layout
-        recyclerHotTerms.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
-        HotTermsAdapter hotTermsAdapter = new HotTermsAdapter();
-        recyclerHotTerms.setAdapter(hotTermsAdapter);
+        // Hot tags - horizontal layout
+        recyclerHotTags.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        TagChipAdapter tagChipAdapter = new TagChipAdapter(tag -> {
+            // Handle tag click - navigate to tag search results
+            Intent intent = new Intent(requireContext(), SearchResultsActivity.class);
+            intent.putExtra("search_mode", "TAG");
+            intent.putExtra("tag_id", tag.getId());
+            intent.putExtra("tag_name", tag.getName());
+            startActivity(intent);
+        });
+        recyclerHotTags.setAdapter(tagChipAdapter);
 
         // Search history - vertical layout
         recyclerHistory.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -203,43 +217,6 @@ public class SearchFragment extends Fragment {
         }
     }
 
-    // Adapter for hot search terms (horizontal)
-    private class HotTermsAdapter extends RecyclerView.Adapter<HotTermsAdapter.ViewHolder> {
-        @NonNull @Override public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            TextView textView = new TextView(requireContext());
-            // Modern green chip styling with proper margins
-            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-            );
-            params.setMargins(0, 0, 16, 0); // Right margin for spacing
-            textView.setLayoutParams(params);
-            textView.setPadding(32, 20, 32, 20); // Larger padding for modern look
-            textView.setBackgroundResource(R.drawable.bg_chip_green);
-            textView.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
-            textView.setTextSize(14);
-            textView.setClickable(true);
-            textView.setFocusable(true);
-            return new ViewHolder(textView);
-        }
-
-        @Override public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            holder.textView.setText(hotSearchTerms.get(position));
-            holder.textView.setOnClickListener(v -> {
-                String term = hotSearchTerms.get(position);
-                etSearch.setText(term);
-                performSearch();
-            });
-        }
-
-        @Override public int getItemCount() { return hotSearchTerms.size(); }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView textView;
-            ViewHolder(TextView textView) { super(textView); this.textView = textView; }
-        }
-    }
-
     // Adapter for search history (vertical) with delete functionality
     private class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHolder> {
         private List<String> history = new ArrayList<>();
@@ -315,5 +292,30 @@ public class SearchFragment extends Fragment {
         history.remove(term);
         prefs.edit().putStringSet(KEY_HISTORY, history).apply();
         loadSearchHistory(); // Refresh display
+    }
+
+    private void loadHotTags() {
+        postRepo.searchTags(null, 10, null, new PostRepository.ResultCallback<PageResponse<TagResponse>>() {
+            @Override
+            public void onSuccess(PageResponse<TagResponse> response) {
+                if (response != null && response.getItems() != null && !response.getItems().isEmpty()) {
+                    TagChipAdapter adapter = (TagChipAdapter) recyclerHotTags.getAdapter();
+                    if (adapter != null) {
+                        adapter.submitList(response.getItems());
+                    }
+                    recyclerHotTags.setVisibility(View.VISIBLE);
+                } else {
+                    // Hide hot tags section if no tags available
+                    recyclerHotTags.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                android.util.Log.e("SearchFragment", "Failed to load hot tags: " + message);
+                // Silently fail - hot tags are not critical, just hide the section
+                recyclerHotTags.setVisibility(View.GONE);
+            }
+        });
     }
 }

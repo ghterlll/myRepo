@@ -76,21 +76,21 @@
             app:tint="#2E7D32" />
     </LinearLayout>
 
-    <!-- Hot Search Terms -->
+    <!-- Hot Tags Section -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Popular Searches"
+        android:text="Popular Tags 🏷️"
         android:textSize="15sp"
         android:textStyle="bold"
         android:textColor="#333333"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
-        android:paddingTop="16dp"
+        android:paddingTop="8dp"
         android:paddingBottom="12dp" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerHotTerms"
+        android:id="@+id/recyclerHotTags"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingLeft="12dp"
