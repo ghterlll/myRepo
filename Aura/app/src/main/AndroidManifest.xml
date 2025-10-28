@@ -24,6 +24,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
+        android:name=".AuraApplication"
         android:allowBackup="true"
         android:label="Aura"
         android:supportsRtl="true"

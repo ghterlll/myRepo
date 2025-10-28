@@ -102,22 +102,26 @@ public class AuraRepository {
      */
     public ApiResponse<TokenResponse> login(String email, String password) throws IOException {
         LoginRequest request = new LoginRequest(
-                email, 
-                password, 
+                email,
+                password,
                 authManager.getDeviceId()
         );
         Response<ApiResponse<TokenResponse>> response = apiService.login(request).execute();
-        
+
         if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
             TokenResponse tokenData = response.body().getData();
-            // Save tokens
+
+            // Parse userId from JWT token
+            Long userId = com.aura.starter.util.JwtParser.extractUserId(tokenData.getAccessToken());
+
+            // Save tokens with parsed userId
             authManager.saveLoginInfo(
                     tokenData.getAccessToken(),
                     tokenData.getRefreshToken(),
-                    null  // userId is parsed from token or fetched via /users/me later
+                    userId  // userId extracted from JWT
             );
         }
-        
+
         return response.body();
     }
 
@@ -130,16 +134,20 @@ public class AuraRepository {
                 authManager.getDeviceId()
         );
         Response<ApiResponse<TokenResponse>> response = apiService.refreshToken(request).execute();
-        
+
         if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
             TokenResponse tokenData = response.body().getData();
+
+            // Parse userId from new JWT token (in case it changed)
+            Long userId = com.aura.starter.util.JwtParser.extractUserId(tokenData.getAccessToken());
+
             authManager.saveLoginInfo(
                     tokenData.getAccessToken(),
                     tokenData.getRefreshToken(),
-                    authManager.getUserId()
+                    userId != null ? userId : authManager.getUserId()  // Use parsed userId or keep existing
             );
         }
-        
+
         return response.body();
     }
 

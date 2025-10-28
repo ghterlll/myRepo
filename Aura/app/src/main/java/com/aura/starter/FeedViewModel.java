@@ -159,34 +159,73 @@ public class FeedViewModel extends ViewModel {
 
     // ==================== 社交互动方法 ====================
 
-    public void toggleLike(Long postId) {
-        postRepo.likePost(postId, new PostRepository.ResultCallback<Void>() {
-            @Override
-            public void onSuccess(Void data) {
-                // 更新本地UI状态 - 这里应该刷新对应帖子的状态
-                refreshCurrentPosts();
-            }
+    /**
+     * Toggle like status - checks current state and calls like or unlike accordingly
+     * Note: The post's liked state should already be toggled by PostAdapter before calling this
+     */
+    public void toggleLike(Post post) {
+        if (post.liked) {
+            // User just liked the post - sync with backend
+            postRepo.likePost(Long.parseLong(post.id), new PostRepository.ResultCallback<Void>() {
+                @Override
+                public void onSuccess(Void data) {
+                    android.util.Log.d("FeedViewModel", "Like synced to backend for post " + post.id);
+                }
 
-            @Override
-            public void onError(String message) {
-                android.util.Log.e("FeedViewModel", "Like post failed: " + message);
-            }
-        });
+                @Override
+                public void onError(String message) {
+                    android.util.Log.e("FeedViewModel", "Like post failed: " + message);
+                    // Note: PostAdapter already updated UI, may need to revert if backend fails
+                }
+            });
+        } else {
+            // User just unliked the post - sync with backend
+            postRepo.unlikePost(Long.parseLong(post.id), new PostRepository.ResultCallback<Void>() {
+                @Override
+                public void onSuccess(Void data) {
+                    android.util.Log.d("FeedViewModel", "Unlike synced to backend for post " + post.id);
+                }
+
+                @Override
+                public void onError(String message) {
+                    android.util.Log.e("FeedViewModel", "Unlike post failed: " + message);
+                }
+            });
+        }
     }
 
-    public void toggleBookmark(Long postId) {
-        postRepo.bookmarkPost(postId, new PostRepository.ResultCallback<Void>() {
-            @Override
-            public void onSuccess(Void data) {
-                // 更新本地UI状态
-                refreshCurrentPosts();
-            }
+    /**
+     * Toggle bookmark status - checks current state and calls bookmark or unbookmark accordingly
+     * Note: The post's bookmarked state should already be toggled by PostAdapter before calling this
+     */
+    public void toggleBookmark(Post post) {
+        if (post.bookmarked) {
+            // User just bookmarked the post - sync with backend
+            postRepo.bookmarkPost(Long.parseLong(post.id), new PostRepository.ResultCallback<Void>() {
+                @Override
+                public void onSuccess(Void data) {
+                    android.util.Log.d("FeedViewModel", "Bookmark synced to backend for post " + post.id);
+                }
 
-            @Override
-            public void onError(String message) {
-                android.util.Log.e("FeedViewModel", "Bookmark post failed: " + message);
-            }
-        });
+                @Override
+                public void onError(String message) {
+                    android.util.Log.e("FeedViewModel", "Bookmark post failed: " + message);
+                }
+            });
+        } else {
+            // User just unbookmarked the post - sync with backend
+            postRepo.unbookmarkPost(Long.parseLong(post.id), new PostRepository.ResultCallback<Void>() {
+                @Override
+                public void onSuccess(Void data) {
+                    android.util.Log.d("FeedViewModel", "Unbookmark synced to backend for post " + post.id);
+                }
+
+                @Override
+                public void onError(String message) {
+                    android.util.Log.e("FeedViewModel", "Unbookmark post failed: " + message);
+                }
+            });
+        }
     }
 
     /**

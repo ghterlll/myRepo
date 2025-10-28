@@ -69,22 +69,12 @@ public class FeedFragment extends Fragment {
                 startActivity(it);
             }
             @Override public void onLike(Post p) {
-                // Convert string ID to Long for API call
-                try {
-                    Long postId = Long.parseLong(p.id);
-                    vm.toggleLike(postId);
-                } catch (NumberFormatException e) {
-                    android.util.Log.e("FeedFragment", "Invalid post ID: " + p.id, e);
-                }
+                // Pass the post object so ViewModel can check current state
+                vm.toggleLike(p);
             }
             @Override public void onBookmark(Post p) {
-                // Convert string ID to Long for API call
-                try {
-                    Long postId = Long.parseLong(p.id);
-                    vm.toggleBookmark(postId);
-                } catch (NumberFormatException e) {
-                    android.util.Log.e("FeedFragment", "Invalid post ID: " + p.id, e);
-                }
+                // Pass the post object so ViewModel can check current state
+                vm.toggleBookmark(p);
             }
         });
         recycler.setAdapter(adapter);

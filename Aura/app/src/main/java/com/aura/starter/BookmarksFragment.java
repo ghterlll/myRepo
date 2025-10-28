@@ -184,20 +184,10 @@ public class BookmarksFragment extends Fragment {
         adapter = new PostAdapter(new PostAdapter.Listener() {
             @Override public void onOpen(Post p) { Intent it = new Intent(requireContext(), PostDetailActivity.class); it.putExtra("post", p); startActivity(it); }
             @Override public void onLike(Post p) {
-                try {
-                    Long postId = Long.parseLong(p.id);
-                    vm.toggleLike(postId);
-                } catch (NumberFormatException e) {
-                    android.util.Log.e("BookmarksFragment", "Invalid post ID: " + p.id, e);
-                }
+                vm.toggleLike(p);
             }
             @Override public void onBookmark(Post p) {
-                try {
-                    Long postId = Long.parseLong(p.id);
-                    vm.toggleBookmark(postId);
-                } catch (NumberFormatException e) {
-                    android.util.Log.e("BookmarksFragment", "Invalid post ID: " + p.id, e);
-                }
+                vm.toggleBookmark(p);
             }
         });
         recycler.setAdapter(adapter);

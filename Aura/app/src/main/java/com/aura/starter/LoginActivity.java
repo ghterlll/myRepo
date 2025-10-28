@@ -120,12 +120,13 @@ public class LoginActivity extends AppCompatActivity {
                 
                 mainHandler.post(() -> {
                     showLoading(false);
-                    
+
                     if (response != null && response.isSuccess()) {
-                        Log.d(TAG, "Login successful!");
-                        Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "Login successful! UserId parsed from JWT token.");
                         // Ensure ApiClient carries fresh token for subsequent requests
                         repository.getAuthManager().initTokenToApiClient();
+
+                        Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
                         navigateToMain();
                     } else {
                         String errorMsg = response != null ? response.getMessage() : "Connection failed";
@@ -245,11 +246,12 @@ public class LoginActivity extends AppCompatActivity {
                 
                 mainHandler.post(() -> {
                     showLoading(false);
-                    
+
                     if (response != null && response.isSuccess()) {
-                        Log.d(TAG, "Verification successful!");
-                        Toast.makeText(this, "Account verified successfully!", Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "Verification successful! UserId parsed from JWT token.");
                         repository.getAuthManager().initTokenToApiClient();
+
+                        Toast.makeText(this, "Account verified successfully!", Toast.LENGTH_SHORT).show();
                         navigateToMain();
                     } else {
                         String errorMsg = response != null ? response.getMessage() : "Verification failed";
@@ -333,7 +335,7 @@ public class LoginActivity extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
-    
+
     @Override
     protected void onDestroy() {
         super.onDestroy();

@@ -1,6 +1,7 @@
 package com.aura.starter;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -29,6 +30,8 @@ import com.aura.starter.network.UserRepository;
 import com.aura.starter.network.models.UserStatisticsResponse;
 import com.aura.starter.network.models.UserProfileResponse;
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
@@ -278,21 +281,47 @@ public class ProfileFragment extends Fragment {
     private void showLoginRequiredDialog() {
         if (getContext() == null) return;
 
-        new AlertDialog.Builder(requireContext())
-            .setTitle("Login Required")
-            .setMessage("Please login to access your profile and personalized content.")
-            .setPositiveButton("Go to Login", (dialog, which) -> {
-                // Navigate to login activity
-                Intent intent = new Intent(requireActivity(), LoginActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                requireActivity().finish();
-            })
-            .setNegativeButton("Cancel", (dialog, which) -> {
-                // User chose not to login, do nothing
-                dialog.dismiss();
-            })
-            .setCancelable(false)
-            .show();
+        // Create custom dialog with modern design
+        Dialog dialog = new Dialog(requireContext());
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_login_required, null);
+        dialog.setContentView(dialogView);
+        dialog.setCancelable(false);
+
+        // Make dialog background transparent to show rounded corners
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        // Get button references
+        MaterialButton btnLogin = dialogView.findViewById(R.id.btnLogin);
+        MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancel);
+
+        // Login button - navigate to LoginActivity and clear back stack
+        btnLogin.setOnClickListener(v -> {
+            dialog.dismiss();
+            // Ensure we're fully logged out before navigating to LoginActivity
+            AuthManager authManager = new AuthManager(requireContext());
+            authManager.logout();  // Clear all tokens to ensure clean login state
+
+            // Navigate to LoginActivity with clear task flags
+            Intent intent = new Intent(requireActivity(), LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            requireActivity().finish();
+        });
+
+        // Cancel button - return to previous page (Record tab)
+        btnCancel.setOnClickListener(v -> {
+            dialog.dismiss();
+            // Navigate back to Record tab
+            if (getActivity() instanceof MainActivity) {
+                BottomNavigationView bottomNav = getActivity().findViewById(R.id.bottom_nav);
+                if (bottomNav != null) {
+                    bottomNav.setSelectedItemId(R.id.nav_record);
+                }
+            }
+        });
+
+        dialog.show();
     }
 }
